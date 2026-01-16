@@ -1,28 +1,35 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { GripVertical, Plus, Trash2, Pin, PinOff } from "lucide-react"
+import { useEffect, useState } from "react"
+import { observer } from "mobx-react-lite"
+import { GripVertical, Plus, Trash2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { categoryStore, type Category } from "@/stores/categoryStore"
+import { flyerStore } from "@/stores/flyerStore"
 
 interface CarouselManagementProps {
   userRole: "super-admin" | "admin" | "designer"
 }
 
-const mockCarousels = [
-  { id: 1, name: "Featured Flyers", position: 1, flyers: 8, isPinned: true },
-  { id: 2, name: "New Arrivals", position: 2, flyers: 12, isPinned: false },
-  { id: 3, name: "Best Sellers", position: 3, flyers: 10, isPinned: true },
-  { id: 4, name: "Birthday Collection", position: 4, flyers: 15, isPinned: false },
-]
-
-export function CarouselManagement({ userRole }: CarouselManagementProps) {
-  const [carousels, setCarousels] = useState(mockCarousels)
+export const CarouselManagement = observer(({ userRole }: CarouselManagementProps) => {
   const [draggedItem, setDraggedItem] = useState<number | null>(null)
 
+  // Create Modal State
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
+
   const canEdit = userRole !== "designer"
+
+  useEffect(() => {
+    categoryStore.fetchCategories()
+    flyerStore.fetchFlyers() // Fetch flyers to show counts
+  }, [])
 
   const handleDragStart = (id: number) => {
     setDraggedItem(id)
@@ -32,22 +39,52 @@ export function CarouselManagement({ userRole }: CarouselManagementProps) {
     e.preventDefault()
   }
 
-  const handleDrop = (targetId: number) => {
+  const handleDrop = async (targetId: number) => {
     if (draggedItem === null || draggedItem === targetId) return
 
-    const draggedIndex = carousels.findIndex((c) => c.id === draggedItem)
-    const targetIndex = carousels.findIndex((c) => c.id === targetId)
+    const categories = categoryStore.categories
+    const draggedIndex = categories.findIndex((c) => c.id === draggedItem)
+    const targetIndex = categories.findIndex((c) => c.id === targetId)
 
-    const newCarousels = [...carousels]
-    const [draggedCarousel] = newCarousels.splice(draggedIndex, 1)
-    newCarousels.splice(targetIndex, 0, draggedCarousel)
+    if (draggedIndex === -1 || targetIndex === -1) return
 
-    setCarousels(newCarousels.map((c, idx) => ({ ...c, position: idx + 1 })))
+    // Calculate new rank
+    // We are moving the dragged item to the target index.
+    // The visual list is 0-indexed, ranks are 1-based (usually).
+    // Let's assume the new rank is targetIndex + 1.
+    const newRank = targetIndex + 1
+
+    // We optimistically update UI? The store does it.
+    await categoryStore.updateCategoryRank(draggedItem, newRank)
     setDraggedItem(null)
   }
 
-  const togglePin = (id: number) => {
-    setCarousels(carousels.map((c) => (c.id === id ? { ...c, isPinned: !c.isPinned } : c)))
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return
+
+    setIsCreating(true)
+    const nextRank = categoryStore.categories.length + 1
+    const result = await categoryStore.createCategory(newCategoryName, nextRank)
+
+    setIsCreating(false)
+    if (result.success) {
+      setIsCreateOpen(false)
+      setNewCategoryName("")
+    }
+  }
+
+  const handleDelete = async (id: number) => {
+    if (confirm("Are you sure you want to delete this category?")) {
+      await categoryStore.deleteCategory(id)
+    }
+  }
+
+  // const togglePin = (id: number) => {
+  //   // API doesn't support pinning yet
+  // }
+
+  if (categoryStore.loading && categoryStore.categories.length === 0) {
+    return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>
   }
 
   return (
@@ -58,7 +95,10 @@ export function CarouselManagement({ userRole }: CarouselManagementProps) {
           <p className="text-muted-foreground">Manage homepage carousels and their order</p>
         </div>
         {canEdit && (
-          <Button className="bg-[#E50914] text-white hover:bg-[#C40812] gap-2">
+          <Button
+            onClick={() => setIsCreateOpen(true)}
+            className="bg-[#E50914] text-white hover:bg-[#C40812] gap-2"
+          >
             <Plus className="w-4 h-4" />
             New Carousel
           </Button>
@@ -72,48 +112,57 @@ export function CarouselManagement({ userRole }: CarouselManagementProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            {carousels.map((carousel) => (
-              <div
-                key={carousel.id}
-                draggable={canEdit}
-                onDragStart={() => handleDragStart(carousel.id)}
-                onDragOver={handleDragOver}
-                onDrop={() => handleDrop(carousel.id)}
-                className={`p-4 bg-secondary rounded-lg border border-border flex items-center justify-between ${
-                  canEdit ? "cursor-move hover:bg-secondary/80" : ""
-                } transition-colors`}
-              >
-                <div className="flex items-center gap-4 flex-1">
-                  {canEdit && <GripVertical className="w-5 h-5 text-muted-foreground" />}
-                  <div>
-                    <p className="font-semibold text-foreground">{carousel.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Position #{carousel.position} • {carousel.flyers} flyers
-                    </p>
+            {categoryStore.categories.map((carousel: Category, index) => {
+              const flyerCount = flyerStore.getFlyersByCategory(carousel.name).length
+              return (
+                <div
+                  key={carousel.id}
+                  draggable={canEdit}
+                  onDragStart={() => handleDragStart(carousel.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={() => handleDrop(carousel.id)}
+                  className={`p-4 bg-secondary rounded-lg border border-border flex items-center justify-between ${canEdit ? "cursor-move hover:bg-secondary/80" : ""
+                    } transition-colors`}
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    {canEdit && <GripVertical className="w-5 h-5 text-muted-foreground" />}
+                    <div>
+                      <p className="font-semibold text-foreground">{carousel.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Position #{carousel.rank} • {flyerCount} flyers
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {canEdit && (
+                      <>
+                        {/* Pinning not supported by API yet
+                        <button
+                          onClick={() => togglePin(carousel.id)}
+                          className="p-2 hover:bg-primary/20 rounded transition-colors"
+                        >
+                          <Pin className="w-5 h-5 text-muted-foreground" />
+                        </button> */}
+                        <button
+                          onClick={() => handleDelete(carousel.id)}
+                          className="p-2 hover:bg-destructive/20 rounded transition-colors"
+                          title="Delete Category"
+                        >
+                          <Trash2 className="w-5 h-5 text-muted-foreground hover:text-destructive" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
+              )
+            })}
 
-                <div className="flex items-center gap-2">
-                  {canEdit && (
-                    <>
-                      <button
-                        onClick={() => togglePin(carousel.id)}
-                        className="p-2 hover:bg-primary/20 rounded transition-colors"
-                      >
-                        {carousel.isPinned ? (
-                          <Pin className="w-5 h-5 text-primary" />
-                        ) : (
-                          <PinOff className="w-5 h-5 text-muted-foreground" />
-                        )}
-                      </button>
-                      <button className="p-2 hover:bg-destructive/20 rounded transition-colors">
-                        <Trash2 className="w-5 h-5 text-muted-foreground hover:text-destructive" />
-                      </button>
-                    </>
-                  )}
-                </div>
+            {categoryStore.categories.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                No categories found. Create one to get started.
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -143,6 +192,37 @@ export function CarouselManagement({ userRole }: CarouselManagementProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Category Modal */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Carousel Category</DialogTitle>
+            <DialogDescription>
+              Add a new category for grouping flyers on the homepage.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="name">Category Name</Label>
+              <Input
+                id="name"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="e.g. Club Flyers"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleCreateCategory} disabled={isCreating || !newCategoryName.trim()}>
+              {isCreating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Create
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-}
+})
+

@@ -248,10 +248,10 @@ function transformApiOrder(apiOrder: any): Order {
     event_date: apiOrder.event_date || '',
     flyer_info: apiOrder.flyer_info || '',
     address_phone: apiOrder.address_phone || '',
-    venue_logo: apiOrder.venue_logo || null,
-    djs: Array.isArray(apiOrder.djs) ? apiOrder.djs : [],
-    host: apiOrder.host || {},
-    sponsors: Array.isArray(apiOrder.sponsors) ? apiOrder.sponsors : [],
+    venue_logo: normalizeImageUrl(apiOrder.venue_logo),
+    djs: Array.isArray(apiOrder.djs) ? apiOrder.djs.map(fixEntityImage) : [],
+    host: fixEntityImage(apiOrder.host) || {},
+    sponsors: Array.isArray(apiOrder.sponsors) ? apiOrder.sponsors.map(fixEntityImage) : [],
     custom_notes: apiOrder.custom_notes || '',
     flyer_is: typeof apiOrder.flyer_is === 'number' ? apiOrder.flyer_is : 0,
     delivery_time: apiOrder.delivery_time || undefined,
@@ -278,3 +278,37 @@ export const ordersStore = new OrdersStore()
 // Auto-fetch on start
 ordersStore.fetchOrders()
 setInterval(() => ordersStore.fetchOrders(), 30000)
+
+// Helper functions for image URL normalization
+const BASE_IMG_URL = "http://193.203.161.174:3007";
+
+function normalizeImageUrl(url: any): string | null {
+  if (!url || typeof url !== 'string') return null;
+  
+  let newUrl = url;
+  // Fix port 3006 -> 3007
+  if (newUrl.includes(":3006")) {
+    newUrl = newUrl.replace(":3006", ":3007");
+  }
+  // Handle relative paths
+  if (newUrl.startsWith("/")) {
+    newUrl = `${BASE_IMG_URL}${newUrl}`;
+  }
+  return newUrl;
+}
+
+function fixEntityImage(entity: any): any {
+  if (!entity) return entity;
+  if (typeof entity === 'string') return entity;
+  
+  if (typeof entity === 'object') {
+    // If it has an image property, normalize it
+    if ('image' in entity && entity.image) {
+      return {
+        ...entity,
+        image: normalizeImageUrl(entity.image)
+      };
+    }
+  }
+  return entity;
+}

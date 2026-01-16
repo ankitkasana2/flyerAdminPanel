@@ -35,6 +35,25 @@ export function FlyerCard({ flyer }: FlyerCardProps) {
         <p className="font-semibold text-sm text-foreground truncate">{flyer.title}</p>
         <p className="text-xs text-muted-foreground mt-1">${flyer.price}</p>
         <p className="text-xs text-muted-foreground">{flyer.formType}</p>
+
+        {/* Categories */}
+        {flyer.categories && flyer.categories.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1 mt-2">
+            {flyer.categories.slice(0, 3).map((cat, idx) => (
+              <span
+                key={idx}
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary text-secondary-foreground"
+              >
+                {cat}
+              </span>
+            ))}
+            {flyer.categories.length > 3 && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground">
+                +{flyer.categories.length - 3}
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

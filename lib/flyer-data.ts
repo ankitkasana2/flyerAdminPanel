@@ -38,14 +38,13 @@ export const CATEGORIES = [
 export interface Flyer {
   id: string
   title: string
-  category: string
+  categories: string[] // Changed from single category to array
+  category?: string // Kept for backward compatibility if needed, but making optional or we can keep it as primary
   price: 10 | 15 | 40
-  formType: "With Image" | "Without Image"
+  formType: "With Photo" | "Only Info" | "Birthday"
   image: string
-  recentlyAdded: boolean // added recently added flag
+  recentlyAdded: boolean 
 }
-
-
 
 // Generate demo flyers - 4 per category
 export function generateDemoFlyers(): Flyer[] {
@@ -83,11 +82,11 @@ export function generateDemoFlyers(): Flyer[] {
 
   CATEGORIES.forEach((category) => {
     const prices: (10 | 15 | 40)[] = [10, 15, 40, 10]
-    const formTypes: ("With Image" | "Without Image")[] = [
-      "With Image",
-      "Without Image",
-      "With Image",
-      "With Image",
+    const formTypes: ("With Photo" | "Only Info" | "Birthday")[] = [
+      "With Photo",
+      "Only Info",
+      "With Photo",
+      "With Photo",
     ]
 
     for (let i = 0; i < 4; i++) {
@@ -95,6 +94,7 @@ export function generateDemoFlyers(): Flyer[] {
         id: `flyer-${id}`,
         title: `${category} Flyer ${i + 1}`,
         category,
+        categories: [category], // Populate array
         price: prices[i],
         formType: formTypes[i],
         image: demoImages[i % demoImages.length],
@@ -116,7 +116,7 @@ export function getRibbons(flyer: Flyer): Array<{ text: string; color: "gold" | 
   }
 
   // Photo ribbon appears below premium (if exists) or alone
-  if (flyer.formType === "With Image") {
+  if (flyer.formType === "With Photo") {
     ribbons.push({ text: "PHOTO", color: "red", size: flyer.price === 40 ? "sm" : "md" })
   }
 

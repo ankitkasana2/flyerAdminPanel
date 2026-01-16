@@ -1,95 +1,73 @@
 "use client"
-import { useState, useEffect } from "react"
+import { observer } from "mobx-react-lite"
 import { Clock, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ordersStore, Order } from "@/stores/ordersStore"
+import { useEffect, useState } from "react"
 
-// Helper: convert "45m", "2h 30m", "8h" → seconds
-const parseTimeToSeconds = (time: string): number => {
-  const hours = time.match(/(\d+)h/)?.[1] ?? "0"
-  const minutes = time.match(/(\d+)m/)?.[1] ?? "0"
-  return parseInt(hours) * 3600 + parseInt(minutes) * 60
-}
+const ActiveOrdersBase = () => {
+  const [now, setNow] = useState(Date.now())
 
-const activeOrders = [
-  { id: "ORD-001", customer: "John Doe", time: "45m", priority: "urgent", status: "1h" },
-  { id: "ORD-002", customer: "Jane Smith", time: "2h 30m", priority: "medium", status: "5h" },
-  { id: "ORD-003", customer: "Bob Johnson", time: "8h", priority: "normal", status: "24h" },
-  { id: "ORD-004", customer: "Alice Brown", time: "30m", priority: "urgent", status: "1h" },
-]
-
-export function ActiveOrders() {
-
-  // Store remaining seconds for each order
-  const [timeLeft, setTimeLeft] = useState<Record<string, number>>(() => {
-    const init: Record<string, number> = {}
-    activeOrders.forEach((o) => {
-      init[o.id] = parseTimeToSeconds(o.time)
-    })
-    return init
-  })
-
-  // Countdown tick
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => {
-        const next = { ...prev }
-        let anyActive = false
-
-        activeOrders.forEach((order) => {
-          if (next[order.id] > 0) {
-            next[order.id] -= 1
-            anyActive = true
-          }
-        })
-
-        if (!anyActive) clearInterval(interval)
-        return next
-      })
-    }, 1000)
-
-    return () => clearInterval(interval)
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
   }, [])
 
-  // Format seconds → "Xm Ys" or "Overdue"
-  const formatTime = (seconds: number) => {
-    if (seconds <= 0) return <span className="text-red-600 font-bold">Overdue</span>
+  // Get active orders and sort by remaining time (most urgent first)
+  const activeOrders = ordersStore.orders
+    .filter(o => o.status !== 'completed' && o.status !== 'pending')
+    .filter(o => o.status !== 'completed')
+    .map(order => {
+      const priorityInfo = ordersStore.getOrderPriority(order)
+      const remainingMs = priorityInfo.remainingMs
+      return {
+        ...order,
+        remainingMs,
+        fastestDelivery: priorityInfo.fastest
+      }
+    })
+    .sort((a, b) => a.remainingMs - b.remainingMs)
+    .slice(0, 5) // Show top 5 urgent
 
-    const h = Math.floor(seconds / 3600)
-    const m = Math.floor((seconds % 3600) / 60)
-    const s = seconds % 60
+  const formatTime = (ms: number) => {
+    if (ms <= 0) return <span className="text-red-600 font-bold">Overdue</span>
+
+    const totalSeconds = Math.floor(ms / 1000)
+    const h = Math.floor(totalSeconds / 3600)
+    const m = Math.floor((totalSeconds % 3600) / 60)
+    const s = totalSeconds % 60
 
     const parts: string[] = []
     if (h > 0) parts.push(`${h}h`)
     if (m > 0) parts.push(`${m}m`)
-    if (s > 0 || parts.length === 0) parts.push(`${s}s`)
+    // Always show seconds if under an hour or if it's the only thing
+    if (h === 0 || parts.length === 0) parts.push(`${s}s`)
 
     return <>{parts.join(" ")}</>
   }
 
-  const getPriorityClass = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "priority-urgent"
-      case "medium":
-        return "priority-medium"
+  const getPriorityColor = (deliveryType: string) => {
+    switch (deliveryType) {
+      case "1H":
+        return "text-red-500"
+      case "5H":
+        return "text-orange-500"
       default:
-        return "priority-normal"
+        return "text-blue-500" // 24H
     }
   }
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "text-red-500"
-      case "medium":
-        return "text-orange-500"
-      default:
-        return "text-gray-500"
-    }
+  // Helper to determine border/bg style based on urgency
+  const getOrderStyle = (remainingMs: number) => {
+    const hoursLeft = remainingMs / (1000 * 60 * 60)
+    if (remainingMs <= 0) return "border-red-500/50 bg-red-500/10"
+    if (hoursLeft < 1) return "border-red-500/30 bg-red-500/5"
+    if (hoursLeft < 5) return "border-orange-500/30 bg-orange-500/5"
+    return "border-border bg-card/50"
   }
 
   return (
-    <Card className="bg-card border-border">
+    <Card className="bg-card border-border h-full">
       <CardHeader>
         <CardTitle className="text-foreground flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-primary" />
@@ -99,25 +77,36 @@ export function ActiveOrders() {
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
-          {activeOrders.map((order) => (
-            <div key={order.id} className={`p-4 rounded-lg ${getPriorityClass(order.priority)}`}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-foreground">{order.id}</p>
-                  <p className="text-sm text-muted-foreground">{order.customer}</p>
-                </div>
-                <div className="text-right">
-                  <p className={`text-sm font-bold ${getPriorityColor(order.priority)}`}>{order.status}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end">
-                    <Clock className="w-3 h-3" />
-                  {formatTime(timeLeft[order.id] ?? 0)}
-                  </p>
+          {activeOrders.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No active orders.</p>
+          ) : (
+            activeOrders.map((order) => (
+              <div
+                key={order.id}
+                className={`p-4 rounded-lg border ${getOrderStyle(order.remainingMs)} transition-all`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-foreground">Order #{order.id}</p>
+                    <p className="text-sm text-muted-foreground">{order.name || order.event_title || "Unknown Customer"}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${getPriorityColor(order.fastestDelivery)}`}>
+                      {order.fastestDelivery}
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1 justify-end font-mono">
+                      <Clock className="w-3 h-3" />
+                      {formatTime(order.remainingMs)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </CardContent>
     </Card>
   )
 }
+
+export const ActiveOrders = observer(ActiveOrdersBase)

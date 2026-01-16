@@ -205,7 +205,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { type Flyer, CATEGORIES } from "@/lib/flyer-data";
+import { type Flyer } from "@/lib/flyer-data";
+import { categoryStore } from "@/stores/categoryStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -216,6 +217,10 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { X } from "lucide-react";
+
+import { observer } from "mobx-react-lite";
+
+// ... existing imports
 
 interface EditFlyerModalProps {
   flyer: Flyer;
@@ -228,18 +233,20 @@ interface EditFlyerModalProps {
   ) => void | Promise<void | { success?: boolean; error?: string }>;
 }
 
-export function EditFlyerModal({
+export const EditFlyerModal = observer(({
   flyer,
   isOpen,
   onClose,
   onSave,
-}: EditFlyerModalProps) {
+}: EditFlyerModalProps) => {
   // local editable state
   const [title, setTitle] = useState(flyer.title);
   const [price, setPrice] = useState<number | string>(flyer.price);
   const [formType, setFormType] = useState<string>(flyer.formType);
-  const [selectedCategory, setSelectedCategory] = useState<string>(
-    flyer.category
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(
+    flyer.categories && flyer.categories.length > 0
+      ? flyer.categories
+      : (flyer.category ? [flyer.category] : [])
   );
   const [recentlyAdded, setRecentlyAdded] = useState<boolean>(
     flyer.recentlyAdded
@@ -248,12 +255,21 @@ export function EditFlyerModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fetch categories on mount
+  useEffect(() => {
+    categoryStore.fetchCategories();
+  }, []);
+
   // Keep local state in sync when flyer prop changes (user edits different item)
   useEffect(() => {
     setTitle(flyer.title);
     setPrice(flyer.price);
     setFormType(flyer.formType);
-    setSelectedCategory(flyer.category);
+    setSelectedCategories(
+      flyer.categories && flyer.categories.length > 0
+        ? flyer.categories
+        : (flyer.category ? [flyer.category] : [])
+    );
     setRecentlyAdded(flyer.recentlyAdded);
     setError(null);
   }, [flyer, isOpen]);
@@ -263,9 +279,21 @@ export function EditFlyerModal({
     setTitle(flyer.title);
     setPrice(flyer.price);
     setFormType(flyer.formType);
-    setSelectedCategory(flyer.category);
+    setSelectedCategories(
+      flyer.categories && flyer.categories.length > 0
+        ? flyer.categories
+        : (flyer.category ? [flyer.category] : [])
+    );
     setRecentlyAdded(flyer.recentlyAdded);
     setError(null);
+  };
+
+  const toggleCategory = (catName: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(catName)
+        ? prev.filter((c) => c !== catName)
+        : [...prev, catName]
+    );
   };
 
   // Save handler supports async onSave
@@ -284,15 +312,16 @@ export function EditFlyerModal({
       title: title.trim(),
       // normalize price to allowed union (10|15|40) if possible
       price: (typeof price === "string" ? Number(price) : price) as 10 | 15 | 40,
-      formType: formType as "With Image" | "Without Image",
-      category: selectedCategory,
+      formType: formType as "With Photo" | "Only Info" | "Birthday",
+      category: selectedCategories[0] || "Uncategorized", // Fallback for single field
+      categories: selectedCategories, // Main logic now
       recentlyAdded,
     };
 
     setSaving(true);
     try {
       // onSave may be sync or async; await either
-      const result = await onSave(updatedFlyer, flyer.category, selectedCategory);
+      const result = await onSave(updatedFlyer, flyer.category || "", selectedCategories[0] || "");
 
       // If caller returns an object with error, show it
       if (result && typeof result === "object" && "error" in result) {
@@ -353,11 +382,10 @@ export function EditFlyerModal({
                   key={p}
                   type="button"
                   onClick={() => setPrice(p)}
-                  className={`px-4 py-2 rounded-lg font-bold transition-all transform ${
-                    Number(price) === p
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg scale-105"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/40"
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-bold transition-all transform ${Number(price) === p
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-primary-foreground shadow-lg scale-105"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/40"
+                    }`}
                 >
                   ${p}
                 </button>
@@ -371,16 +399,15 @@ export function EditFlyerModal({
               Form Type
             </label>
             <div className="flex gap-3">
-              {["With Image", "Without Image"].map((type) => (
+              {["With Photo", "Only Info", "Birthday"].map((type) => (
                 <button
                   key={type}
                   type="button"
                   onClick={() => setFormType(type)}
-                  className={`px-4 py-2 rounded-lg font-bold transition-all transform ${
-                    formType === type
-                      ? "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground shadow-lg scale-105"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/40"
-                  }`}
+                  className={`px-4 py-2 rounded-lg font-bold transition-all transform ${formType === type
+                    ? "bg-gradient-to-r from-secondary to-secondary/80 text-secondary-foreground shadow-lg scale-105"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/40"
+                    }`}
                 >
                   {type}
                 </button>
@@ -394,18 +421,17 @@ export function EditFlyerModal({
               Categories
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-48 overflow-y-auto">
-              {CATEGORIES.map((cat) => (
+              {categoryStore.categories.map((cat) => (
                 <button
-                  key={cat}
+                  key={cat.id}
                   type="button"
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-2 rounded-lg text-sm font-bold transition-all transform ${
-                    selectedCategory === cat
-                      ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg scale-105"
-                      : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/40"
-                  }`}
+                  onClick={() => toggleCategory(cat.name)}
+                  className={`px-3 py-2 rounded-lg text-sm font-bold transition-all transform ${selectedCategories.includes(cat.name)
+                    ? "bg-gradient-to-r from-primary to-primary/80 text-white shadow-lg scale-105"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted border border-border/40"
+                    }`}
                 >
-                  {cat}
+                  {cat.name}
                 </button>
               ))}
             </div>
@@ -419,11 +445,10 @@ export function EditFlyerModal({
             <button
               type="button"
               onClick={() => setRecentlyAdded(!recentlyAdded)}
-              className={`px-4 py-2 rounded-lg font-bold transition-all transform ${
-                recentlyAdded
-                  ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg scale-105"
-                  : "bg-muted text-muted-foreground border border-border/40"
-              }`}
+              className={`px-4 py-2 rounded-lg font-bold transition-all transform ${recentlyAdded
+                ? "bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg scale-105"
+                : "bg-muted text-muted-foreground border border-border/40"
+                }`}
             >
               {recentlyAdded ? "YES" : "NO"}
             </button>
@@ -467,5 +492,5 @@ export function EditFlyerModal({
       </DialogContent>
     </Dialog>
   );
-}
+});
 

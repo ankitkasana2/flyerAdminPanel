@@ -4,7 +4,7 @@ import type { Flyer } from "@/lib/flyer-data";
 class FlyerStore {
   flyers: Flyer[] = [];
   loading = false;
-    saving = false;
+  saving = false;
   error: string | null = null;
 
   constructor() {
@@ -24,6 +24,7 @@ class FlyerStore {
         id: f.id.toString(),
         title: f.title,
         category: f.categories?.[0] || "Uncategorized",
+        categories: f.categories || [],
         price: f.price,
         formType: f.form_type,
         image: f.image_url || "/placeholder.svg",
@@ -49,7 +50,7 @@ class FlyerStore {
   //     f.id === updatedFlyer.id ? updatedFlyer : f
   //   );
   // }
-   // ---------------------------------------------------------
+  // ---------------------------------------------------------
   // UPDATE FLYER (send to backend)
   // ---------------------------------------------------------
   async updateFlyer(updatedFlyer: Flyer) {
@@ -57,12 +58,22 @@ class FlyerStore {
     this.error = null;
 
     try {
+      // Transform frontend Flyer object to backend API format
+      const apiPayload = {
+        title: updatedFlyer.title,
+        price: updatedFlyer.price,
+        form_type: updatedFlyer.formType, // Convert camelCase to snake_case
+        categories: updatedFlyer.categories,
+        recently_added: updatedFlyer.recentlyAdded, // Convert camelCase to snake_case
+        image_url: updatedFlyer.image,
+      };
+
       const res = await fetch(
         `http://193.203.161.174:3007/api/flyers/${updatedFlyer.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(updatedFlyer),
+          body: JSON.stringify(apiPayload),
         }
       );
 
@@ -121,7 +132,7 @@ class FlyerStore {
   getFlyersByCategory(category: string): Flyer[] {
     if (category === "Recently Added") return this.flyers.filter(f => f.recentlyAdded);
     if (category === "All") return this.flyers;
-    return this.flyers.filter(f => f.category === category);
+    return this.flyers.filter(f => f.categories?.includes(category) || f.category === category);
   }
 }
 

@@ -1,7 +1,8 @@
 "use client"
 
-import { Bell, User, LogOut } from "lucide-react"
+import { User, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { NotificationDropdown } from "./NotificationDropdown"
 
 interface HeaderProps {
   userRole: "super-admin" | "admin" | "designer"
@@ -23,10 +24,7 @@ export function Header({ userRole, onLogout }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-4">
-        <button className="relative p-2 text-muted-foreground hover:text-foreground transition-colors">
-          <Bell className="w-6 h-6" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full"></span>
-        </button>
+        <NotificationDropdown />
 
         <div className="flex items-center gap-3 pl-4 border-l border-border">
           <div className="text-right">

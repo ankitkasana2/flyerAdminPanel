@@ -86,7 +86,7 @@ const LiveFlyers = observer(() => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="space-y-16">
-          {CATEGORIES.filter((category) => 
+          {CATEGORIES.filter((category) =>
             category === "All" || flyersByCategory[category]?.length > 0
           ).map((category) => (
             <CategorySection
@@ -112,7 +112,7 @@ const LiveFlyers = observer(() => {
                 PHOTO Ribbon
               </h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Appears on all flyers using the With Image form (any price tier:
+                Appears on all flyers using the With Photo form (any price tier:
                 $10 or $15)
               </p>
               <p className="text-sm text-muted-foreground">

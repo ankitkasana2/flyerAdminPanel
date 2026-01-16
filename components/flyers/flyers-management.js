@@ -1,32 +1,57 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { observer } from "mobx-react-lite"
 import { Plus, Edit2, Trash2, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { FlyerForm } from "./flyer-form"
 import { BulkUpload } from "./bulk-upload"
+import { flyerStore } from "@/stores/flyerStore"
+import { EditFlyerModal } from "@/components/liveFlyer/edit-flyer-modal"
 
-const mockFlyers = [
-  { id: 1, title: "Birthday Bash", price: "$10", category: "Birthday", status: "Active" },
-  { id: 2, title: "Wedding Elegance", price: "$40", category: "Wedding", status: "Active" },
-  { id: 3, title: "Corporate Pro", price: "$15", category: "Corporate", status: "Draft" },
-]
-
-export function FlyersManagement({ userRole }) {
+const FlyersManagementList = ({ userRole }) => {
   const [showForm, setShowForm] = useState(false)
   const [showBulkUpload, setShowBulkUpload] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [flyers, setFlyers] = useState(mockFlyers)
+  const [editingFlyer, setEditingFlyer] = useState(null)
+
+  useEffect(() => {
+    flyerStore.fetchFlyers()
+  }, [])
 
   const canEdit = userRole !== "designer"
 
   const handleBulkUpload = (uploadedFlyers) => {
     console.log("[v0] Bulk upload received:", uploadedFlyers)
     setShowBulkUpload(false)
-    // TODO: Add API call to save flyers to database
+    flyerStore.fetchFlyers() // Refresh after upload
   }
+
+  const handleDelete = async (id) => {
+    if (confirm("Are you sure you want to delete this flyer?")) {
+      const result = await flyerStore.deleteFlyer(id)
+      if (result.success) {
+        // Success alert or silent refresh (store already updates state)
+      } else {
+        alert("Failed to delete flyer")
+      }
+    }
+  }
+
+  const handleEdit = (flyer) => {
+    setEditingFlyer(flyer)
+  }
+
+  const handleEditSave = async (updatedFlyer) => {
+     await flyerStore.updateFlyer(updatedFlyer)
+     setEditingFlyer(null)
+  }
+
+  const filteredFlyers = flyerStore.flyers.filter(flyer => 
+    flyer.title.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <div className="space-y-6">
@@ -42,7 +67,6 @@ export function FlyersManagement({ userRole }) {
               className="bg-[#E50914] text-white hover:bg-[#C40812] gap-2"
             >
               <Upload className="w-4 h-4" />
-              {/* Bulk  */}
               Upload Flyers
             </Button>
             {/* <Button onClick={() => setShowForm(true)} className="bg-[#E50914] text-white hover:bg-[#C40812] gap-2">
@@ -56,6 +80,15 @@ export function FlyersManagement({ userRole }) {
       {showBulkUpload && <BulkUpload onClose={() => setShowBulkUpload(false)} onUpload={handleBulkUpload} />}
 
       {showForm && <FlyerForm onClose={() => setShowForm(false)} />}
+      
+      {editingFlyer && (
+        <EditFlyerModal 
+            flyer={editingFlyer} 
+            isOpen={!!editingFlyer} 
+            onClose={() => setEditingFlyer(null)} 
+            onSave={handleEditSave}
+        />
+      )}
 
       <Card className="bg-card border-border">
         <CardHeader>
@@ -73,6 +106,9 @@ export function FlyersManagement({ userRole }) {
           </div>
 
           <div className="overflow-x-auto">
+            {flyerStore.loading ? (
+                <div className="p-8 text-center text-muted-foreground">Loading flyers...</div>
+            ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border">
@@ -84,30 +120,45 @@ export function FlyersManagement({ userRole }) {
                 </tr>
               </thead>
               <tbody>
-                {flyers.map((flyer) => (
+                {filteredFlyers.length === 0 ? (
+                    <tr>
+                        <td colSpan={5} className="py-8 text-center text-muted-foreground">No flyers found.</td>
+                    </tr>
+                ) : (
+                filteredFlyers.map((flyer) => (
                   <tr key={flyer.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                    <td className="py-3 px-4 text-foreground">{flyer.title}</td>
-                    <td className="py-3 px-4 text-foreground font-semibold text-primary">{flyer.price}</td>
-                    <td className="py-3 px-4 text-muted-foreground">{flyer.category}</td>
+                    <td className="py-3 px-4 text-foreground font-medium">{flyer.title}</td>
+                    <td className="py-3 px-4 text-foreground font-semibold text-primary">
+                        {typeof flyer.price === 'number' ? `$${flyer.price}` : flyer.price}
+                    </td>
+                    <td className="py-3 px-4 text-muted-foreground">
+                        {flyer.categories && flyer.categories.length > 0 
+                            ? flyer.categories.join(", ") 
+                            : flyer.category}
+                    </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`px-2 py-1 rounded text-xs font-semibold ${
-                          flyer.status === "Active"
-                            ? "bg-green-900/30 text-green-400"
-                            : "bg-yellow-900/30 text-yellow-400"
-                        }`}
+                        className="px-2 py-1 rounded text-xs font-semibold bg-green-900/30 text-green-400"
                       >
-                        {flyer.status}
+                        Active
                       </span>
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex gap-2">
                         {canEdit && (
                           <>
-                            <button className="p-1 hover:bg-secondary rounded transition-colors">
+                            <button 
+                                className="p-1 hover:bg-secondary rounded transition-colors" 
+                                title="Edit"
+                                onClick={() => handleEdit(flyer)}
+                            >
                               <Edit2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
                             </button>
-                            <button className="p-1 hover:bg-secondary rounded transition-colors">
+                            <button 
+                                className="p-1 hover:bg-secondary rounded transition-colors" 
+                                title="Delete"
+                                onClick={() => handleDelete(flyer.id)}
+                            >
                               <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                             </button>
                           </>
@@ -115,12 +166,16 @@ export function FlyersManagement({ userRole }) {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+                )}
               </tbody>
             </table>
+            )}
           </div>
         </CardContent>
       </Card>
     </div>
   )
 }
+
+export const FlyersManagement = observer(FlyersManagementList)

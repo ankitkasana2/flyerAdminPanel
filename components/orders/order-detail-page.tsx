@@ -7,15 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ordersStore } from "@/stores/ordersStore";
 
-const BASE_IMAGE_URL = "http://193.203.161.174:3007";
-
-const getImageUrl = (path: string | null | undefined) => {
-  if (!path) return null;
-  if (path.startsWith("http")) return path;
-  if (path.startsWith("/")) return `${BASE_IMAGE_URL}${path}`;
-  return `${BASE_IMAGE_URL}/${path}`;
-};
-
 export interface OrderFromAPI {
   id: number;
   email: string | null;
@@ -56,11 +47,22 @@ export interface OrderFromAPI {
   createdAt?: string;
 }
 
-interface FlyerDetails {
+interface OrderFile {
   id: number;
-  title: string;
-  image_url: string;
+  order_id: number;
+  user_id: string;
+  file_url: string;
+  file_type: string;
+  original_name: string;
+  created_at: string;
 }
+
+interface OrderFilesResponse {
+  success: boolean;
+  count: number;
+  files: OrderFile[];
+}
+
 
 interface OrderDetailPageProps {
   selectedOrder: OrderFromAPI;
@@ -75,24 +77,25 @@ export function OrderDetailPage({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState(selectedOrder?.custom_notes || selectedOrder?.adminNotes || "");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [flyerDetails, setFlyerDetails] = useState<FlyerDetails | null>(null);
+  const [orderFiles, setOrderFiles] = useState<OrderFile[]>([]);
+
+  const fetchOrderFiles = async () => {
+    try {
+      const response = await fetch(`http://193.203.161.174:3007/api/order-files/order/${selectedOrder.id}`);
+      if (response.ok) {
+        const data: OrderFilesResponse = await response.json();
+        if (data.success) {
+          setOrderFiles(data.files);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching order files:", error);
+    }
+  };
 
   useEffect(() => {
-    if (selectedOrder.flyer_is) {
-      const fetchFlyerDetails = async () => {
-        try {
-          const res = await fetch(`http://193.203.161.174:3007/api/flyers/${selectedOrder.flyer_is}`);
-          if (res.ok) {
-            const data = await res.json();
-            setFlyerDetails(data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch flyer details:", error);
-        }
-      };
-      fetchFlyerDetails();
-    }
-  }, [selectedOrder.flyer_is]);
+    fetchOrderFiles();
+  }, [selectedOrder.id]);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -137,8 +140,41 @@ export function OrderDetailPage({
     const file = event.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      // Here you can add logic to upload the file to your server
-      console.log('File selected:', file.name);
+    }
+  };
+
+  const [isSending, setIsSending] = useState(false);
+
+  const handleSendFile = async () => {
+    if (!uploadedFile) {
+      alert("Please select a file first");
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", uploadedFile);
+
+      const response = await fetch(`http://193.203.161.174:3007/api/order-files/${selectedOrder.id}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.statusText}`);
+      }
+
+      const result = await response.text(); // Using text() as the snippet logged body which could be raw string
+      console.log("API Response:", result);
+      alert("File sent successfully!");
+      setUploadedFile(null); // Reset uploaded file
+      fetchOrderFiles(); // Refresh list
+    } catch (error) {
+      console.error("Error sending file:", error);
+      alert("Failed to send file. Please try again.");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -151,86 +187,25 @@ export function OrderDetailPage({
       minute: "2-digit",
     });
 
-
-  const downloadImage = async (url: string, filename: string) => {
+  const forceDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = filename || 'download';
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download failed:', error);
+      // Fallback
       window.open(url, '_blank');
     }
   };
-
-  const getNameAndImage = (item: any) => {
-    let name = "";
-    let image = null;
-
-    if (typeof item === 'string') {
-      name = item;
-    } else if (typeof item === 'object' && item !== null) {
-      // Extract Name
-      if ('name' in item) {
-        const n = item.name;
-        if (typeof n === 'string') name = n;
-        else if (typeof n === 'object' && n !== null && 'name' in n) name = String((n as any).name);
-        else if (n === null) name = "";
-        else name = String(n);
-      }
-
-      // Extract Image
-      if ('image' in item && typeof item.image === 'string') {
-        image = getImageUrl(item.image);
-      }
-    }
-    return { name, image };
-  };
-
-  const renderAssetCard = (item: any, type: string, index: number) => {
-    const { name, image } = getNameAndImage(item);
-
-    // If no image and no name, skip
-    if (!image && !name) return null;
-
-    return (
-      <div key={`${type}-${index}`} className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden flex flex-col">
-        {image ? (
-          <div className="relative aspect-square bg-black/5">
-            <img src={image} alt={name || type} className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                className="h-8 text-xs font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  downloadImage(image!, `${type}_${index + 1}.png`);
-                }}
-              >
-                <Download className="w-3.5 h-3.5 mr-1.5" /> Download
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="aspect-square bg-secondary flex items-center justify-center text-muted-foreground p-4 text-center">
-            <span className="text-xs italic">No Image</span>
-          </div>
-        )}
-        <div className="p-3 border-t border-border bg-card/50">
-          <p className="text-xs font-semibold text-foreground truncate" title={name}>{name || "No Name"}</p>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-0.5">{type}</p>
-        </div>
-      </div>
-    );
-  };
+  // alert(JSON.stringify(selectedOrder));
   return (
     <div className="min-h-screen bg-background pb-12">
       <div className="sticky top-0 bg-background/95 border-b border-border z-50 backdrop-blur-sm">
@@ -368,103 +343,248 @@ export function OrderDetailPage({
               ))}
             </div>
 
-            {/* Event Visual Assets Grid */}
-            <div className="mt-8 border-t border-border pt-6">
-              <h3 className="text-sm font-bold text-foreground uppercase tracking-tight mb-4 flex items-center gap-2">
-                <span className="bg-primary/10 text-primary p-1.5 rounded">Event Visuals</span>
-              </h3>
+            {/* DJs */}
+            {selectedOrder.djs && selectedOrder.djs.length > 0 && (
+              <div className="mt-8 border-t border-border pt-6">
+                <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                  DJ LINEUP
+                  <span className="text-xs font-normal text-muted-foreground">({selectedOrder.djs.length})</span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {selectedOrder.djs.map((dj, i) => {
+                    let djName = 'Unknown DJ';
+                    if (typeof dj === 'string') {
+                      djName = dj || 'Unknown DJ';
+                    } else if (typeof dj === 'object' && dj !== null && 'name' in dj) {
+                      const nameValue = dj.name;
+                      if (typeof nameValue === 'string') {
+                        djName = nameValue || 'Unknown DJ';
+                      } else if (typeof nameValue === 'object' && nameValue !== null && 'name' in nameValue) {
+                        const innerName = typeof nameValue.name === 'string' ? nameValue.name : String(nameValue.name);
+                        djName = innerName || 'Unknown DJ';
+                      } else if (typeof nameValue === 'object' && nameValue !== null) {
+                        djName = JSON.stringify(nameValue);
+                      } else {
+                        djName = String(nameValue) || 'Unknown DJ';
+                      }
+                    }
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {/* Venue Logo */}
-                {selectedOrder.venue_logo && (
-                  <div className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden flex flex-col">
-                    <div className="relative aspect-square bg-white/5 p-4 flex items-center justify-center">
-                      <img
-                        src={getImageUrl(selectedOrder.venue_logo) || ""}
-                        alt="Venue Logo"
-                        className="max-w-full max-h-full object-contain"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="h-8 text-xs font-medium"
-                          onClick={() => downloadImage(getImageUrl(selectedOrder.venue_logo)!, 'venue_logo.png')}
-                        >
-                          <Download className="w-3.5 h-3.5 mr-1.5" /> Download
-                        </Button>
+                    const djImage = typeof dj === 'object' && dj !== null && 'image' in dj && typeof dj.image === 'string'
+                      ? dj.image
+                      : null;
+
+                    return (
+                      <div key={i} className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all">
+                        {djImage ? (
+                          <div className="aspect-square w-full relative bg-black/5">
+                            <img src={djImage} alt={djName} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => window.open(djImage, '_blank')}
+                                className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                                title="View Image"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                              </button>
+                              <button
+                                onClick={() => forceDownload(djImage!, `${djName.replace(/\s+/g, '_')}.jpg`)}
+                                className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                                title="Download Image"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="aspect-square w-full flex items-center justify-center bg-secondary text-muted-foreground">
+                            <span className="text-2xl font-bold opacity-20">DJ</span>
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <p className="font-semibold text-sm truncate" title={djName}>{djName}</p>
+                          {djImage && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => window.open(djImage, '_blank')}
+                                className="flex-1 text-xs bg-secondary hover:bg-secondary/80 text-foreground py-1.5 rounded flex items-center justify-center gap-1 font-medium transition-colors"
+                              >
+                                View
+                              </button>
+                              <button
+                                onClick={() => forceDownload(djImage!, `${djName.replace(/\s+/g, '_')}.jpg`)}
+                                className="flex-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary py-1.5 rounded flex items-center justify-center gap-1 font-medium transition-colors"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-3 border-t border-border bg-card/50">
-                      <p className="text-xs font-semibold text-foreground">Venue Logo</p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Host */}
-                {selectedOrder.host && renderAssetCard(selectedOrder.host, "Host", 0)}
-
-                {/* DJs */}
-                {selectedOrder.djs && selectedOrder.djs.map((dj, i) => renderAssetCard(dj, "DJ", i))}
-
-                {/* Sponsors */}
-                {selectedOrder.sponsors && selectedOrder.sponsors.map((s, i) => renderAssetCard(s, "Sponsor", i))}
+                    );
+                  })}
+                </div>
               </div>
+            )}
 
-              {(!selectedOrder.venue_logo &&
-                (!selectedOrder.djs || selectedOrder.djs.length === 0) &&
-                (!selectedOrder.host || Object.keys(selectedOrder.host).length === 0) &&
-                (!selectedOrder.sponsors || selectedOrder.sponsors.length === 0)) && (
-                  <div className="text-sm text-muted-foreground italic pl-1">No visual assets available for this order.</div>
-                )}
-            </div>
+            {/* Sponsors */}
+            {selectedOrder.sponsors && selectedOrder.sponsors.length > 0 && (
+              <div className="mt-8 border-t border-border pt-6">
+                <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                  SPONSORS
+                  <span className="text-xs font-normal text-muted-foreground">({selectedOrder.sponsors.length})</span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {selectedOrder.sponsors.map((s, i) => {
+                    let sponsorName = 'Unknown Sponsor';
+                    if (typeof s === 'string') {
+                      sponsorName = s || 'Unknown Sponsor';
+                    } else if (typeof s === 'object' && s !== null && 'name' in s) {
+                      const nameValue = s.name;
+                      if (typeof nameValue === 'string') {
+                        sponsorName = nameValue || 'Unknown Sponsor';
+                      } else if (typeof nameValue === 'object' && nameValue !== null && 'name' in nameValue) {
+                        const innerName = typeof nameValue.name === 'string' ? nameValue.name : String(nameValue.name);
+                        sponsorName = innerName || 'Unknown Sponsor';
+                      } else if (typeof nameValue === 'object' && nameValue !== null) {
+                        sponsorName = JSON.stringify(nameValue);
+                      } else {
+                        sponsorName = String(nameValue) || 'Unknown Sponsor';
+                      }
+                    }
+
+                    const sponsorImage = typeof s === 'object' && s !== null && 'image' in s && typeof s.image === 'string'
+                      ? s.image
+                      : null;
+
+                    return (
+                      <div key={i} className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all">
+                        {sponsorImage ? (
+                          <div className="aspect-square w-full relative bg-white p-2 flex items-center justify-center">
+                            <img src={sponsorImage} alt={sponsorName} className="max-w-full max-h-full object-contain" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => window.open(sponsorImage, '_blank')}
+                                className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                                title="View Image"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                              </button>
+                              <button
+                                onClick={() => forceDownload(sponsorImage!, `${sponsorName.replace(/\s+/g, '_')}.jpg`)}
+                                className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                                title="Download Image"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="aspect-square w-full flex items-center justify-center bg-secondary text-muted-foreground">
+                            <span className="text-lg font-bold opacity-20">SPON</span>
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <p className="font-semibold text-sm truncate" title={sponsorName}>{sponsorName}</p>
+                          {sponsorImage && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => window.open(sponsorImage, '_blank')}
+                                className="flex-1 text-xs bg-secondary hover:bg-secondary/80 text-foreground py-1.5 rounded flex items-center justify-center gap-1 font-medium transition-colors"
+                              >
+                                View
+                              </button>
+                              <button
+                                onClick={() => forceDownload(sponsorImage!, `${sponsorName.replace(/\s+/g, '_')}.jpg`)}
+                                className="flex-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary py-1.5 rounded flex items-center justify-center gap-1 font-medium transition-colors"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Host */}
+            {selectedOrder.host && typeof selectedOrder.host === 'object' && Object.keys(selectedOrder.host).length > 0 && (
+              <div className="mt-8 border-t border-border pt-6">
+                <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+                  HOST
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {(() => {
+                    let hostName = 'N/A';
+                    if ('name' in selectedOrder.host) {
+                      const nameValue = selectedOrder.host.name;
+                      hostName = typeof nameValue === 'string' ? nameValue :
+                        typeof nameValue === 'object' && nameValue !== null ? JSON.stringify(nameValue) :
+                          String(nameValue);
+                    } else {
+                      hostName = JSON.stringify(selectedOrder.host);
+                    }
+
+                    const hostImage = 'image' in selectedOrder.host && typeof selectedOrder.host.image === 'string'
+                      ? selectedOrder.host.image
+                      : null;
+
+                    return (
+                      <div className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all">
+                        {hostImage ? (
+                          <div className="aspect-square w-full relative bg-black/5">
+                            <img src={hostImage} alt={hostName} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => window.open(hostImage, '_blank')}
+                                className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                                title="View Image"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                              </button>
+                              <button
+                                onClick={() => forceDownload(hostImage!, `${hostName.replace(/\s+/g, '_')}.jpg`)}
+                                className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                                title="Download Image"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="aspect-square w-full flex items-center justify-center bg-secondary text-muted-foreground">
+                            <span className="text-2xl font-bold opacity-20">HOST</span>
+                          </div>
+                        )}
+                        <div className="p-3">
+                          <p className="font-semibold text-sm truncate" title={hostName}>{hostName}</p>
+                          {hostImage && (
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => window.open(hostImage, '_blank')}
+                                className="flex-1 text-xs bg-secondary hover:bg-secondary/80 text-foreground py-1.5 rounded flex items-center justify-center gap-1 font-medium transition-colors"
+                              >
+                                View
+                              </button>
+                              <button
+                                onClick={() => forceDownload(hostImage!, `${hostName.replace(/\s+/g, '_')}.jpg`)}
+                                className="flex-1 text-xs bg-primary/10 hover:bg-primary/20 text-primary py-1.5 rounded flex items-center justify-center gap-1 font-medium transition-colors"
+                              >
+                                Download
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
-
-        {/* Selected Flyer Design */}
-        {flyerDetails && (
-          <Card className="border border-border bg-card">
-            <CardHeader className="border-b border-border pb-4">
-              <CardTitle className="text-base font-bold text-foreground tracking-tight">
-                Selected Flyer Design
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="flex flex-col md:flex-row gap-6 items-start">
-                <div className="relative group rounded-lg overflow-hidden border border-border max-w-[200px] w-full bg-secondary/30">
-                  <div className="aspect-[3/4] relative">
-                    <img
-                      src={flyerDetails.image_url}
-                      alt={flyerDetails.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        className="h-8 text-xs font-medium"
-                        onClick={() => downloadImage(flyerDetails.image_url, `flyer_template_${flyerDetails.id}.png`)}
-                      >
-                        <Download className="w-3.5 h-3.5 mr-1.5" /> Download
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4 flex-1">
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">{flyerDetails.title}</h3>
-                    <Badge variant="outline" className="mt-2 text-xs font-normal text-muted-foreground">
-                      Template ID: {flyerDetails.id}
-                    </Badge>
-                  </div>
-                  <div className="p-4 bg-secondary/50 rounded-lg border border-border/50 text-sm text-muted-foreground">
-                    <p>This is the design template selected by the customer for their order.</p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Tumhara original Flyers section with countdown */}
         <div className="space-y-4">
@@ -510,13 +630,52 @@ export function OrderDetailPage({
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" /> Complete
                 </Button>
-                <Button className="flex-1 bg-[#E50914] text-white hover:bg-[#E50914] active:bg-[#E50914] font-semibold h-9 gap-2 text-sm transition-none">
-                  <Send className="w-3.5 h-3.5" /> Send
+                <Button
+                  className="flex-1 bg-[#E50914] text-white hover:bg-[#E50914] active:bg-[#E50914] font-semibold h-9 gap-2 text-sm transition-none"
+                  onClick={handleSendFile}
+                  disabled={isSending}
+                >
+                  <Send className="w-3.5 h-3.5" /> {isSending ? "Sending..." : "Send"}
                 </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Uploaded Files Section */}
+        {orderFiles.length > 0 && (
+          <Card className="border border-border bg-card">
+            <CardHeader className="border-b border-border pb-4">
+              <CardTitle className="text-base font-bold text-foreground tracking-tight">
+                Uploaded Files ({orderFiles.length})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                {orderFiles.map((file) => (
+                  <div key={file.id} className="flex items-center justify-between p-3 bg-secondary border border-border rounded group">
+                    <div className="flex flex-col">
+                      <p className="text-sm font-medium text-foreground truncate max-w-[200px] md:max-w-md">
+                        {file.original_name}
+                      </p>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(file.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                    <a
+                      href={file.file_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-primary hover:underline text-sm font-semibold"
+                    >
+                      <Download className="w-4 h-4" /> Download
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Admin Notes */}
         <Card className="border border-border bg-card">

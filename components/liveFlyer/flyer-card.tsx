@@ -12,7 +12,7 @@ interface FlyerCardProps {
 
 export function FlyerCard({ flyer, onEdit, onDelete }: FlyerCardProps) {
   return (
-    <div className="relative group overflow-hidden rounded-xl bg-black/90 border border-neutral-800 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-red-900/30">
+    <div className="h-full flex flex-col relative group overflow-hidden rounded-xl bg-black/90 border border-neutral-800 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-red-900/30">
       {/* Image */}
       <div className="relative w-full aspect-[4/5]">
         <Image
@@ -43,19 +43,33 @@ export function FlyerCard({ flyer, onEdit, onDelete }: FlyerCardProps) {
       </div>
 
       {/* Info Section */}
-      <div className="bg-gradient-to-t from-black to-transparent px-4 py-3 text-center">
+      <div className="flex-1 flex flex-col bg-gradient-to-t from-black to-transparent px-4 py-3 text-center">
         <p className="font-semibold text-white text-sm truncate">
           {flyer.title}
         </p>
         <div className="flex justify-center items-center gap-3 mt-2 text-xs text-gray-300">
           <span className="px-3 py-1 rounded-full bg-red-600/80 text-white font-medium shadow">
             {/* $ */}
-            {flyer.price}
+            {String(flyer.price || "0")}
           </span>
           <span className="px-3 py-1 rounded-full bg-neutral-800/80 text-white/80 font-medium">
             {flyer.formType}
           </span>
         </div>
+
+        {/* Categories */}
+        {flyer.categories && flyer.categories.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-1.5 mt-auto pt-3">
+            {flyer.categories.map((cat, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-0.5 rounded text-[10px] font-medium bg-neutral-900/60 text-gray-400 border border-neutral-800 backdrop-blur-sm"
+              >
+                {cat}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

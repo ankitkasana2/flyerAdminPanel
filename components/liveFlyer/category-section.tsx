@@ -70,23 +70,24 @@ export function CategorySection({
   // }, [category, flyers]);
 
   useEffect(() => {
-  if (category === "All") {
-    const localFlyers: Flyer[] = LOCAL_IMAGES.map((img, i) => ({
-      id: `local-${i}`,
-      title: `Flyer ${i + 1}`,
-      category: "All",
-      price: 10,
-      formType: "With Image",
-      image: img,
-      recentlyAdded: false,
-    }));
+    if (category === "All") {
+      const localFlyers: Flyer[] = LOCAL_IMAGES.map((img, i) => ({
+        id: `local-${i}`,
+        title: `Flyer ${i + 1}`,
+        category: "All",
+        categories: ["All"],
+        price: 10,
+        formType: "With Photo",
+        image: img,
+        recentlyAdded: false,
+      }));
 
-    // 👉 Always show local flyers for "All" category, even if no real flyers
-    setDisplayFlyers(localFlyers);
-  } else {
-    setDisplayFlyers(flyers);
-  }
-}, [category, flyers]);
+      // 👉 Always show local flyers for "All" category, even if no real flyers
+      setDisplayFlyers(localFlyers);
+    } else {
+      setDisplayFlyers(flyers);
+    }
+  }, [category, flyers]);
 
 
   // Scroll logic
