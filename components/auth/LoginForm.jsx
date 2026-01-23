@@ -4,48 +4,24 @@ import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import Image from "next/image"
 import authStore from "../../stores/authStore";
 export function LoginForm({ onLogin }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [selectedRole, setSelectedRole] = useState("admin")
-  const [error, setError] = useState("")          
+  const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault()
-  //   setError("")
-  //   setLoading(true)
 
-  //   try {
-  //     const res = await fetch("http://localhost:5000/api/auth/login", {
-  //       method: "POST",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify({
-  //         email,
-  //         password,
-  //         role: selectedRole,
-  //       }),
-  //     })
 
-  //     const data = await res.json()
-  //     if (!res.ok) throw new Error(data.message || "Login failed")
-
-  //     // Save token & user info
-  //     localStorage.setItem("token", data.token)
-  //     localStorage.setItem("user", JSON.stringify(data.user))
-
-  //     // Notify parent
-  //     onLogin(data.user.role)
-
-  //   } catch (err) {
-  //     setError(err.message)
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
-  
   const handleSubmit = async (e) => {
     e.preventDefault();
     await authStore.login(email, password, selectedRole, onLogin);
@@ -100,31 +76,32 @@ export function LoginForm({ onLogin }) {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-300">Role</label>
-                  <select
-                    value={selectedRole}
-                    onChange={(e) => setSelectedRole(e.target.value)}
-                    className="w-full px-4 py-3 bg-[#333] border-0 rounded-md text-white text-sm focus:ring-2 focus:ring-[#E50914] focus:outline-none"
-                  >
-                    <option value="super-admin">Super Admin</option>
-                    <option value="admin">Admin</option>
-                    <option value="designer">Designer</option>
-                  </select>
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger className="w-full h-12 bg-[#333] border-0 text-white focus:ring-2 focus:ring-[#E50914] focus:outline-none">
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-[#333] border-[#333] text-white">
+                      <SelectItem value="super-admin" className="focus:bg-[#E50914] focus:text-white cursor-pointer">Super Admin</SelectItem>
+                      <SelectItem value="admin" className="focus:bg-[#E50914] focus:text-white cursor-pointer">Admin</SelectItem>
+                      <SelectItem value="designer" className="focus:bg-[#E50914] focus:text-white cursor-pointer">Designer</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* ✅ Show error if any */}
                 {/* {error && (
                   <p className="text-red-500 text-center text-sm">{error}</p>
                 )} */}
-                  {authStore.loading && <p>Loading...</p>}
-      {authStore.error && <p style={{ color: "red" }}>{authStore.error}</p>}      
+                {authStore.loading && <p>Loading...</p>}
+                {authStore.error && <p style={{ color: "red" }}>{authStore.error}</p>}
 
                 <Button
                   type="submit"
                   className="w-full bg-[#E50914] hover:bg-[#C40812] text-white font-bold h-12 text-lg rounded-md transition-all"
                   disabled={!email || !password || loading}
                 >
-                   {authStore.loading ? "Logging in..." : "Login"}
-                  {/* {loading ? "Signing In..." : "Sign In"} */}
+                  {authStore.loading ? "Logging in..." : "Login"}
+
                 </Button>
               </form>
             </CardContent>
