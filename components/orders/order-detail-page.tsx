@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ordersStore } from "@/stores/ordersStore";
+import { flyerStore } from "@/stores/flyerStore";
+import { observer } from "mobx-react-lite";
 
 export interface OrderFromAPI {
   id: number;
@@ -69,10 +71,10 @@ interface OrderDetailPageProps {
   onBack: () => void;
 }
 
-export function OrderDetailPage({
+export const OrderDetailPage = observer(({
   selectedOrder,
   onBack,
-}: OrderDetailPageProps) {
+}: OrderDetailPageProps) => {
   const [now, setNow] = useState(Date.now());
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [adminNotes, setAdminNotes] = useState(selectedOrder?.custom_notes || selectedOrder?.adminNotes || "");
@@ -101,6 +103,14 @@ export function OrderDetailPage({
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    if (flyerStore.flyers.length === 0) {
+      flyerStore.fetchFlyers();
+    }
+  }, []);
+
+  const orderedFlyer = flyerStore.flyers.find(f => f.id === selectedOrder.flyer_is.toString());
 
   const copyToClipboard = (text: string, fieldId: string) => {
     navigator.clipboard.writeText(text);
@@ -205,6 +215,7 @@ export function OrderDetailPage({
       window.open(url, '_blank');
     }
   };
+  console.log("Order Details Debug:", selectedOrder);
   // alert(JSON.stringify(selectedOrder));
   return (
     <div className="min-h-screen bg-background pb-12">
@@ -583,6 +594,55 @@ export function OrderDetailPage({
                 </div>
               </div>
             )}
+
+            {/* Ordered Flyer Template */}
+            <div className="mt-8 border-t border-border pt-6">
+              <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2 uppercase">
+                Ordered Flyer Template
+                {flyerStore.loading && <span className="text-xs font-normal text-muted-foreground">(Loading...)</span>}
+              </h3>
+              <div className="max-w-xs">
+                {orderedFlyer ? (
+                  <div className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all">
+                    <div className="aspect-[3/4] w-full relative bg-black/5">
+                      <img 
+                        src={orderedFlyer.image} 
+                        alt={orderedFlyer.title} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => window.open(orderedFlyer.image, '_blank')}
+                          className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                          title="View Original Flyer"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
+                        </button>
+                        <button
+                          onClick={() => forceDownload(orderedFlyer.image, `${orderedFlyer.title.replace(/\s+/g, '_')}.jpg`)}
+                          className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
+                          title="Download Template"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-3">
+                      <p className="font-semibold text-sm truncate" title={orderedFlyer.title}>{orderedFlyer.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">ID: {orderedFlyer.id}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aspect-[3/4] w-full flex flex-col items-center justify-center bg-secondary border border-dashed border-border rounded-lg text-muted-foreground">
+                    <span className="text-xs font-medium">{flyerStore.loading ? "Loading flyer..." : "Flyer template not found"}</span>
+                    {!flyerStore.loading && <span className="text-[10px] mt-1 opacity-50">ID: {selectedOrder.flyer_is}</span>}
+                  </div>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -706,4 +766,4 @@ export function OrderDetailPage({
       </div>
     </div>
   );
-}
+});

@@ -96,6 +96,7 @@ class OrdersStore {
       runInAction(() => {
         this.orders = transformed
         this.loading = false
+        console.log("Fetched and transformed orders:", transformed);
       })
     } catch (err: any) {
       runInAction(() => {

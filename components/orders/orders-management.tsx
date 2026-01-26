@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ordersStore } from "@/stores/ordersStore";
+import { flyerStore } from "@/stores/flyerStore";
 import { OrderDetailPage, type OrderFromAPI } from "./order-detail-page";
 
 const msToHMS = (ms: number) => {
@@ -38,7 +39,14 @@ interface OrdersManagementProps {
 export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) => {
   useEffect(() => {
     ordersStore.fetchOrders();
-    const interval = setInterval(() => ordersStore.fetchOrders(), 30000);
+    if (flyerStore.flyers.length === 0) {
+      flyerStore.fetchFlyers();
+    }
+    console.log("Orders Management - Initial Orders Load:", ordersStore.orders);
+    const interval = setInterval(() => {
+      ordersStore.fetchOrders();
+      console.log("Orders Management - Periodic Orders Update:", ordersStore.orders);
+    }, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -60,6 +68,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
       flyer_is: ordersStore.selectedOrder.flyer_is || 0,
       createdAt: ordersStore.selectedOrder.created_at,
     };
+    console.log("Selected Order in Management:", selectedOrder);
 
     return (
       <OrderDetailPage
@@ -100,6 +109,12 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
       </div>
     );
   }
+
+  console.log("Orders Management - Rendering with orders:", {
+    total: ordersStore.orders.length,
+    active: ordersStore.visibleOrders.active.length,
+    completed: ordersStore.visibleOrders.completed.length
+  });
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
@@ -166,7 +181,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                     Customer
                   </th>
                   <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
-                    Flyers
+                    Flyer
                   </th>
                   <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
                     Priority
@@ -215,8 +230,24 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                           )}
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-foreground text-sm font-medium">
-                        {order.flyers?.length || 0}
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          {(() => {
+                            const flyer = flyerStore.flyers.find(f => f.id === order.flyer_is.toString());
+                            return flyer ? (
+                              <div className="w-10 h-14 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
+                                <img src={flyer.image} alt="" className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-10 h-14 bg-secondary rounded flex-shrink-0 border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
+                                {order.flyer_is}
+                              </div>
+                            );
+                          })()}
+                          <span className="text-foreground text-sm font-medium">
+                            {order.event_title || `Order #${order.id}`}
+                          </span>
+                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <span className={`text-xs ${priorityColor}`}>{fastest}</span>
@@ -322,7 +353,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                         Email
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
-                        Flyers
+                        Flyer
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
                         Date
@@ -342,7 +373,25 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                           {order.id}
                         </td>
                         <td className="py-4 px-4 text-muted-foreground text-sm">{order.email}</td>
-                        <td className="py-4 px-4 text-foreground text-sm font-medium">{order.flyers?.length ?? 0}</td>
+                        <td className="py-4 px-4">
+                          <div className="flex items-center gap-3">
+                            {(() => {
+                              const flyer = flyerStore.flyers.find(f => f.id === order.flyer_is.toString());
+                              return flyer ? (
+                                <div className="w-10 h-14 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
+                                  <img src={flyer.image} alt="" className="w-full h-full object-cover" />
+                                </div>
+                              ) : (
+                                <div className="w-10 h-14 bg-secondary rounded flex-shrink-0 border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
+                                  {order.flyer_is}
+                                </div>
+                              );
+                            })()}
+                            <span className="text-foreground text-sm font-medium truncate max-w-[200px]">
+                              {order.event_title || `Order #${order.id}`}
+                            </span>
+                          </div>
+                        </td>
                         <td className="py-4 px-4 text-muted-foreground text-sm">{formatDate(order.createdAt ?? "")}</td>
                         <td className="py-4 px-4 text-center">
                           <button
