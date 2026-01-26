@@ -178,10 +178,10 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                     Order ID
                   </th>
                   <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
-                    Customer
+                    Flyer
                   </th>
                   <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
-                    Flyer
+                    Customer
                   </th>
                   <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
                     Priority
@@ -219,6 +219,25 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                         {order.id}
                       </td>
                       <td className="py-4 px-4">
+                        <div className="flex items-center gap-3">
+                          {(() => {
+                            const flyer = flyerStore.flyers.find(f => f.id === order.flyer_is.toString());
+                            return flyer ? (
+                              <div className="w-20 h-28 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
+                                <img src={flyer.image} alt="" className="w-full h-full object-cover" />
+                              </div>
+                            ) : (
+                              <div className="w-20 h-28 bg-secondary rounded flex-shrink-0 border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
+                                {order.flyer_is}
+                              </div>
+                            );
+                          })()}
+                          <span className="text-foreground text-sm font-medium">
+                            {order.event_title || `Order #${order.id}`}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
                         <div className="flex flex-col gap-0.5">
                           <span className="text-foreground text-sm font-medium">
                             {order.email}
@@ -228,25 +247,6 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                               {order.whatsapp}
                             </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <div className="flex items-center gap-3">
-                          {(() => {
-                            const flyer = flyerStore.flyers.find(f => f.id === order.flyer_is.toString());
-                            return flyer ? (
-                              <div className="w-10 h-14 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
-                                <img src={flyer.image} alt="" className="w-full h-full object-cover" />
-                              </div>
-                            ) : (
-                              <div className="w-10 h-14 bg-secondary rounded flex-shrink-0 border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
-                                {order.flyer_is}
-                              </div>
-                            );
-                          })()}
-                          <span className="text-foreground text-sm font-medium">
-                            {order.event_title || `Order #${order.id}`}
-                          </span>
                         </div>
                       </td>
                       <td className="py-4 px-4">
@@ -350,10 +350,10 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                         Order ID
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
-                        Email
+                        Flyer
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
-                        Flyer
+                        Customer
                       </th>
                       <th className="text-left py-4 px-4 font-semibold text-foreground text-xs uppercase tracking-wide">
                         Date
@@ -372,17 +372,16 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                         <td className="py-4 px-4 text-foreground font-medium text-sm">
                           {order.id}
                         </td>
-                        <td className="py-4 px-4 text-muted-foreground text-sm">{order.email}</td>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
                             {(() => {
                               const flyer = flyerStore.flyers.find(f => f.id === order.flyer_is.toString());
                               return flyer ? (
-                                <div className="w-10 h-14 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
+                                <div className="w-20 h-28 bg-secondary rounded overflow-hidden flex-shrink-0 border border-border">
                                   <img src={flyer.image} alt="" className="w-full h-full object-cover" />
                                 </div>
                               ) : (
-                                <div className="w-10 h-14 bg-secondary rounded flex-shrink-0 border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
+                                <div className="w-20 h-28 bg-secondary rounded flex-shrink-0 border border-dashed border-border flex items-center justify-center text-[10px] text-muted-foreground">
                                   {order.flyer_is}
                                 </div>
                               );
@@ -392,6 +391,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                             </span>
                           </div>
                         </td>
+                        <td className="py-4 px-4 text-muted-foreground text-sm">{order.email}</td>
                         <td className="py-4 px-4 text-muted-foreground text-sm">{formatDate(order.createdAt ?? "")}</td>
                         <td className="py-4 px-4 text-center">
                           <button
