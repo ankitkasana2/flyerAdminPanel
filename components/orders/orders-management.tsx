@@ -212,7 +212,8 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                   return (
                     <tr
                       key={order.id}
-                      className={`group relative cursor-default transition-all duration-300 ease-out hover:bg-[#E50914]/10 hover:border-l-4 hover:border-l-[#E50914] ${isExpired ? "gentle-pulse bg-primary/5" : ""
+                      onClick={() => ordersStore.setSelectedOrder(order)}
+                      className={`group relative cursor-pointer transition-all duration-300 ease-out hover:bg-[#E50914]/10 hover:border-l-4 hover:border-l-[#E50914] ${isExpired ? "gentle-pulse bg-primary/5" : ""
                         }`}
                     >
                       <td className="py-4 px-4 text-foreground font-medium text-sm">
@@ -367,7 +368,8 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                     {ordersStore.visibleOrders.completed.map((order) => (
                       <tr
                         key={order.id}
-                        className="group relative cursor-default transition-all duration-300 ease-out hover:bg-[#E50914]/10 hover:border-l-4 hover:border-l-[#E50914]"
+                        onClick={() => ordersStore.setSelectedOrder(order)}
+                        className="group relative cursor-pointer transition-all duration-300 ease-out hover:bg-[#E50914]/10 hover:border-l-4 hover:border-l-[#E50914]"
                       >
                         <td className="py-4 px-4 text-foreground font-medium text-sm">
                           {order.id}

@@ -25,12 +25,13 @@ export function Sidebar({ currentPage, onPageChange, userRole }: SidebarProps) {
 
   return (
     <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-      <div className="p-6 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#E50914] text-white rounded flex items-center justify-center font-bold text-lg">
-            N
-          </div>
-          <div>
+      <div 
+        className="p-6 border-b border-sidebar-border cursor-pointer hover:bg-sidebar-accent/50 transition-colors"
+        onClick={() => onPageChange("dashboard")}
+      >
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Gkodify" className="h-8 w-auto object-contain" />
+          <div className="border-l border-sidebar-border pl-3">
             <h1 className="font-bold text-lg text-sidebar-foreground">Admin</h1>
             <p className="text-xs text-muted-foreground">Flyer Manager</p>
           </div>
