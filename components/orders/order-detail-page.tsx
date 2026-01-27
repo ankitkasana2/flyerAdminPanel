@@ -175,8 +175,7 @@ export const OrderDetailPage = observer(({
         throw new Error(`Error: ${response.statusText}`);
       }
 
-      const result = await response.text(); // Using text() as the snippet logged body which could be raw string
-      console.log("API Response:", result);
+      console.log("File uploaded successfully");
       alert("File sent successfully!");
       setUploadedFile(null); // Reset uploaded file
       fetchOrderFiles(); // Refresh list
@@ -185,6 +184,45 @@ export const OrderDetailPage = observer(({
       alert("Failed to send file. Please try again.");
     } finally {
       setIsSending(false);
+    }
+  };
+
+  const [isNotifying, setIsNotifying] = useState(false);
+
+  const handleNotifyCustomer = async () => {
+    // We need a download link. Use the latest file if available.
+    const latestFile = orderFiles.length > 0 ? orderFiles[0] : null;
+
+    if (!latestFile && !confirm("No files have been uploaded for this order yet. Send notification anyway?")) {
+      return;
+    }
+
+    setIsNotifying(true);
+    try {
+      const response = await fetch('/api/send-ready-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedOrder.id.toString(),
+          customerName: selectedOrder.name || (selectedOrder.email ? selectedOrder.email.split('@')[0] : "Valued Customer"),
+          customerEmail: selectedOrder.email,
+          flyerName: selectedOrder.event_title || "Flyer Design",
+          downloadUrl: latestFile ? latestFile.file_url : `https://grodify.com/profile`, // Fallback
+          imageUrl: latestFile ? latestFile.file_url : (orderedFlyer ? orderedFlyer.image : undefined)
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to send notification");
+      }
+
+      alert("Customer notified successfully!");
+    } catch (error: any) {
+      console.error("Error notifying customer:", error);
+      alert(error.message || "Failed to notify customer");
+    } finally {
+      setIsNotifying(false);
     }
   };
 
@@ -605,9 +643,9 @@ export const OrderDetailPage = observer(({
                 {orderedFlyer ? (
                   <div className="group relative bg-secondary/30 border border-border rounded-lg overflow-hidden hover:border-primary/50 transition-all">
                     <div className="aspect-[3/4] w-full relative bg-black/5">
-                      <img 
-                        src={orderedFlyer.image} 
-                        alt={orderedFlyer.title} 
+                      <img
+                        src={orderedFlyer.image}
+                        alt={orderedFlyer.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -696,6 +734,13 @@ export const OrderDetailPage = observer(({
                   disabled={isSending}
                 >
                   <Send className="w-3.5 h-3.5" /> {isSending ? "Sending..." : "Send"}
+                </Button>
+                <Button
+                  className="flex-1 bg-[#E50914] text-white hover:bg-red-700 active:bg-[#E50914] font-semibold h-9 gap-2 text-sm transition-all"
+                  onClick={handleNotifyCustomer}
+                  disabled={isNotifying}
+                >
+                  <Send className="w-3.5 h-3.5 rotate-[-45deg]" /> {isNotifying ? "Notifying..." : "Notify via Email"}
                 </Button>
               </div>
             </CardContent>
