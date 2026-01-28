@@ -66,6 +66,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
       sponsors: ordersStore.selectedOrder.sponsors || [],
       custom_notes: ordersStore.selectedOrder.custom_notes || '',
       flyer_is: ordersStore.selectedOrder.flyer_is || 0,
+      displayId: ordersStore.selectedOrder.displayId,
       createdAt: ordersStore.selectedOrder.created_at,
     };
     console.log("Selected Order in Management:", selectedOrder);
@@ -217,7 +218,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                         }`}
                     >
                       <td className="py-4 px-4 text-foreground font-medium text-sm">
-                        {order.id}
+                        #{order.displayId}
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
@@ -234,7 +235,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                             );
                           })()}
                           <span className="text-foreground text-sm font-medium">
-                            {order.event_title || `Order #${order.id}`}
+                            {order.event_title || `Order #${order.displayId}`}
                           </span>
                         </div>
                       </td>
@@ -372,7 +373,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                         className="group relative cursor-pointer transition-all duration-300 ease-out hover:bg-[#E50914]/10 hover:border-l-4 hover:border-l-[#E50914]"
                       >
                         <td className="py-4 px-4 text-foreground font-medium text-sm">
-                          {order.id}
+                          #{order.displayId}
                         </td>
                         <td className="py-4 px-4">
                           <div className="flex items-center gap-3">
@@ -389,7 +390,7 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                               );
                             })()}
                             <span className="text-foreground text-sm font-medium truncate max-w-[200px]">
-                              {order.event_title || `Order #${order.id}`}
+                              {order.event_title || `Order #${order.displayId}`}
                             </span>
                           </div>
                         </td>

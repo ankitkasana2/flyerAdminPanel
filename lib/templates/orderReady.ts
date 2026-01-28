@@ -1,41 +1,40 @@
 
+
 interface OrderReadyParams {
-    name: string;
-    orderId: string;
-    flyerType: string;
-    downloadUrl: string;
-    imageUrl?: string;
-    customerEmail: string;
+  name: string;
+  orderId: string;
+  downloadUrl: string;
+  imageUrl?: string;
+  customerEmail: string;
 }
 
 import fs from 'fs';
 import path from 'path';
 
 export const orderReadyTemplate = ({
-    name,
-    orderId,
-    flyerType,
-    downloadUrl,
-    imageUrl,
-    customerEmail,
+  name,
+  orderId,
+  downloadUrl,
+  imageUrl,
+  customerEmail,
 }: OrderReadyParams) => {
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-    // Convert logo to base64 to ensure it shows up even on localhost
-    let logoBase64 = '';
-    try {
-        const logoPath = path.join(process.cwd(), 'public', 'logo.png');
-        if (fs.existsSync(logoPath)) {
-            const logoBuffer = fs.readFileSync(logoPath);
-            logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-        }
-    } catch (error) {
-        console.error('Error loading logo for email:', error);
+  // Convert logo to base64 to ensure it shows up even on localhost
+  let logoBase64 = '';
+  try {
+    const logoPath = path.join(process.cwd(), 'public', 'logo.png');
+    if (fs.existsSync(logoPath)) {
+      const logoBuffer = fs.readFileSync(logoPath);
+      logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
+  } catch (error) {
+    console.error('Error loading logo for email:', error);
+  }
 
-    const logoUrl = logoBase64 || `${baseUrl}/logo.png`;
+  const logoUrl = logoBase64 || `${baseUrl}/logo.png`;
 
-    return `
+  return `
 <!DOCTYPE html>
 <html>
 <head>
@@ -62,16 +61,12 @@ export const orderReadyTemplate = ({
           <!-- Content -->
           <tr>
             <td style="padding:40px; color:#ffffff;">
-              <p style="color:#00FF00; font-size:14px; letter-spacing:2px; margin-bottom:10px; font-weight:bold;">
-                DESIGN READY
-              </p>
-
-              <h1 style="font-size:28px; margin:0 0 20px; font-weight:700;">
-                Good news ${name && name !== 'Valued Customer' ? name : 'there'}, your flyer is ready!
+              <h1 style="font-size:28px; margin:0 0 20px; font-weight:700; text-align:center;">
+                Hi ${name && name !== 'Valued Customer' ? name : 'there'}, your flyer is ready!
               </h1>
 
-              <p style="font-size:16px; line-height:1.6; color:#b3b3b3;">
-                Our creative team has finished your custom design for <strong style="color:#ffffff;">${flyerType}</strong>. 
+              <p style="font-size:16px; line-height:1.6; color:#b3b3b3; text-align:center;">
+                Our creative team has finished your custom design. 
                 You can now view and download your high-resolution files below.
               </p>
 
@@ -82,19 +77,14 @@ export const orderReadyTemplate = ({
               </div>
               ` : ''}
 
-              <!-- Side by Side Layout for Details -->
+              <!-- Order Info -->
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px;">
                 <tr>
                   <td width="100%" valign="top">
-                    <!-- Order Info -->
                     <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#1f1f1f; border-radius:8px;">
                       <tr>
                         <td style="padding:15px; color:#b3b3b3; font-size:14px;">Order ID</td>
                         <td style="padding:15px; text-align:right; color:#ffffff; font-weight:600; font-size:14px;">#${orderId}</td>
-                      </tr>
-                      <tr>
-                        <td style="padding:15px; color:#b3b3b3; font-size:14px;">Flyer Type</td>
-                        <td style="padding:15px; text-align:right; color:#ffffff; font-size:14px;">${flyerType}</td>
                       </tr>
                     </table>
                   </td>
@@ -110,7 +100,7 @@ export const orderReadyTemplate = ({
                 </a>
               </div>
 
-              <p style="margin-top:30px; font-size:14px; color:#b3b3b3; text-align:center;">
+              <p style="margin-top:40px; font-size:14px; color:#b3b3b3; text-align:center;">
                 Thank you for choosing Grodify for your creative needs! ✨
               </p>
             </td>

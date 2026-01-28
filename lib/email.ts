@@ -71,7 +71,6 @@ export const sendOrderReadyEmail = async (params: SendOrderReadyParams) => {
     const html = orderReadyTemplate({
         name: customerName,
         orderId,
-        flyerType: flyerName,
         downloadUrl,
         imageUrl,
         customerEmail,

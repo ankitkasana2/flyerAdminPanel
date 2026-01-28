@@ -11,6 +11,7 @@ import { observer } from "mobx-react-lite";
 
 export interface OrderFromAPI {
   id: number;
+  displayId: string;
   email: string | null;
   whatsapp?: string;
   name?: string;
@@ -203,10 +204,9 @@ export const OrderDetailPage = observer(({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: selectedOrder.id.toString(),
+          orderId: selectedOrder.displayId,
           customerName: selectedOrder.name || (selectedOrder.email ? selectedOrder.email.split('@')[0] : "Valued Customer"),
           customerEmail: selectedOrder.email,
-          flyerName: selectedOrder.event_title || "Flyer Design",
           downloadUrl: latestFile ? latestFile.file_url : `https://grodify.com/profile`, // Fallback
           imageUrl: latestFile ? latestFile.file_url : (orderedFlyer ? orderedFlyer.image : undefined)
         })
@@ -268,7 +268,7 @@ export const OrderDetailPage = observer(({
             Back to Orders
           </Button>
           <h1 className="text-lg font-bold text-foreground tracking-tight">
-            Order #{selectedOrder.id}
+            Order #{selectedOrder.displayId}
           </h1>
           {/* Status Dropdown */}
           <select

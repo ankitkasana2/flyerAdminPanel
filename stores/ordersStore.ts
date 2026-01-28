@@ -6,6 +6,7 @@ type OrderStatus = "pending" | "processing" | "completed"
 
 export interface Order {
   id: number
+  displayId: string
   email: string | null
   whatsapp?: string
   name?: string
@@ -233,8 +234,10 @@ function transformApiOrder(apiOrder: any): Order {
     }] : []),
   ]
 
+  const orderId = Number(apiOrder.id)
   return {
-    id: Number(apiOrder.id), // Ensure id is a number
+    id: orderId, // Ensure id is a number for logic
+    displayId: (orderId + 10000).toString(), // More professional 5-digit ID
     email: apiOrder.email || null,
     whatsapp: apiOrder.whatsapp || undefined,
     name: apiOrder.name || undefined,
@@ -285,7 +288,7 @@ const BASE_IMG_URL = "http://193.203.161.174:3007";
 
 function normalizeImageUrl(url: any): string | null {
   if (!url || typeof url !== 'string') return null;
-  
+
   let newUrl = url;
   // Fix port 3006 -> 3007
   if (newUrl.includes(":3006")) {
@@ -301,7 +304,7 @@ function normalizeImageUrl(url: any): string | null {
 function fixEntityImage(entity: any): any {
   if (!entity) return entity;
   if (typeof entity === 'string') return entity;
-  
+
   if (typeof entity === 'object') {
     // If it has an image property, normalize it
     if ('image' in entity && entity.image) {

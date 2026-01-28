@@ -87,7 +87,7 @@ const ActiveOrdersBase = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-semibold text-foreground">Order #{order.id}</p>
+                    <p className="font-semibold text-foreground">Order #{order.displayId}</p>
                     <p className="text-sm text-muted-foreground">{order.name || order.event_title || "Unknown Customer"}</p>
                   </div>
                   <div className="text-right">
