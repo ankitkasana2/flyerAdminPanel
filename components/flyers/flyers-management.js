@@ -45,11 +45,11 @@ const FlyersManagementList = ({ userRole }) => {
   }
 
   const handleEditSave = async (updatedFlyer) => {
-     await flyerStore.updateFlyer(updatedFlyer)
-     setEditingFlyer(null)
+    await flyerStore.updateFlyer(updatedFlyer)
+    setEditingFlyer(null)
   }
 
-  const filteredFlyers = flyerStore.flyers.filter(flyer => 
+  const filteredFlyers = flyerStore.flyers.filter(flyer =>
     flyer.title.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -80,13 +80,13 @@ const FlyersManagementList = ({ userRole }) => {
       {showBulkUpload && <BulkUpload onClose={() => setShowBulkUpload(false)} onUpload={handleBulkUpload} />}
 
       {showForm && <FlyerForm onClose={() => setShowForm(false)} />}
-      
+
       {editingFlyer && (
-        <EditFlyerModal 
-            flyer={editingFlyer} 
-            isOpen={!!editingFlyer} 
-            onClose={() => setEditingFlyer(null)} 
-            onSave={handleEditSave}
+        <EditFlyerModal
+          flyer={editingFlyer}
+          isOpen={!!editingFlyer}
+          onClose={() => setEditingFlyer(null)}
+          onSave={handleEditSave}
         />
       )}
 
@@ -107,69 +107,73 @@ const FlyersManagementList = ({ userRole }) => {
 
           <div className="overflow-x-auto">
             {flyerStore.loading ? (
-                <div className="p-8 text-center text-muted-foreground">Loading flyers...</div>
+              <div className="p-8 text-center text-muted-foreground">Loading flyers...</div>
             ) : (
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Title</th>
-                  <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Price</th>
-                  <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Category</th>
-                  <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Status</th>
-                  <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredFlyers.length === 0 ? (
-                    <tr>
-                        <td colSpan={5} className="py-8 text-center text-muted-foreground">No flyers found.</td>
-                    </tr>
-                ) : (
-                filteredFlyers.map((flyer) => (
-                  <tr key={flyer.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
-                    <td className="py-3 px-4 text-foreground font-medium">{flyer.title}</td>
-                    <td className="py-3 px-4 text-foreground font-semibold text-primary">
-                        {typeof flyer.price === 'number' ? `$${flyer.price}` : flyer.price}
-                    </td>
-                    <td className="py-3 px-4 text-muted-foreground">
-                        {flyer.categories && flyer.categories.length > 0 
-                            ? flyer.categories.join(", ") 
-                            : flyer.category}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span
-                        className="px-2 py-1 rounded text-xs font-semibold bg-green-900/30 text-green-400"
-                      >
-                        Active
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        {canEdit && (
-                          <>
-                            <button 
-                                className="p-1 hover:bg-secondary rounded transition-colors" 
-                                title="Edit"
-                                onClick={() => handleEdit(flyer)}
-                            >
-                              <Edit2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
-                            </button>
-                            <button 
-                                className="p-1 hover:bg-secondary rounded transition-colors" 
-                                title="Delete"
-                                onClick={() => handleDelete(flyer.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Title</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Price</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Original Name</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Category</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Status</th>
+                    <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Actions</th>
                   </tr>
-                ))
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredFlyers.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-muted-foreground">No flyers found.</td>
+                    </tr>
+                  ) : (
+                    filteredFlyers.map((flyer) => (
+                      <tr key={flyer.id} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                        <td className="py-3 px-4 text-foreground font-medium">{flyer.title}</td>
+                        <td className="py-3 px-4 text-foreground font-semibold text-primary">
+                          {typeof flyer.price === 'number' ? `$${flyer.price}` : flyer.price}
+                        </td>
+                        <td className="py-3 px-4 text-muted-foreground font-mono text-[11px] max-w-[150px] truncate" title={flyer.fileNameOriginal}>
+                          {flyer.fileNameOriginal || "N/A"}
+                        </td>
+                        <td className="py-3 px-4 text-muted-foreground">
+                          {flyer.categories && flyer.categories.length > 0
+                            ? flyer.categories.join(", ")
+                            : flyer.category}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className="px-2 py-1 rounded text-xs font-semibold bg-green-900/30 text-green-400"
+                          >
+                            Active
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex gap-2">
+                            {canEdit && (
+                              <>
+                                <button
+                                  className="p-1 hover:bg-secondary rounded transition-colors"
+                                  title="Edit"
+                                  onClick={() => handleEdit(flyer)}
+                                >
+                                  <Edit2 className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                                </button>
+                                <button
+                                  className="p-1 hover:bg-secondary rounded transition-colors"
+                                  title="Delete"
+                                  onClick={() => handleDelete(flyer.id)}
+                                >
+                                  <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             )}
           </div>
         </CardContent>

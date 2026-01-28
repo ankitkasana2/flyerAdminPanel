@@ -33,6 +33,11 @@ export function FlyerCard({ flyer }: FlyerCardProps) {
       {/* Flyer Info */}
       <div className="p-3 text-center border-t border-border">
         <p className="font-semibold text-sm text-foreground truncate">{flyer.title}</p>
+        {flyer.fileNameOriginal && (
+          <p className="text-[10px] text-muted-foreground truncate font-mono mt-0.5">
+            {flyer.fileNameOriginal}
+          </p>
+        )}
         <p className="text-xs text-muted-foreground mt-1">${flyer.price}</p>
         <p className="text-xs text-muted-foreground">{flyer.formType}</p>
 

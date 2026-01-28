@@ -22,6 +22,8 @@ export default function FlyerImage({ flyer }) {
 
       <img
         src={flyer.preview || "/event-flyer.png"}
+        alt={flyer.fileNameOriginal || flyer.title || "flyer preview"}
+        title={flyer.fileNameOriginal || flyer.title || "flyer preview"}
         className="w-full h-full object-cover rounded border border-[#333]"
       />
     </div>

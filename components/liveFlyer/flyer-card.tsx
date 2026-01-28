@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Download } from "lucide-react";
 import { type Flyer } from "@/lib/flyer-data";
 
 interface FlyerCardProps {
@@ -11,13 +11,19 @@ interface FlyerCardProps {
 }
 
 export function FlyerCard({ flyer, onEdit, onDelete }: FlyerCardProps) {
+  const forceDownload = (url: string, filename: string) => {
+    const downloadUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+    window.location.href = downloadUrl;
+  };
+
   return (
     <div className="h-full flex flex-col relative group overflow-hidden rounded-xl bg-black/90 border border-neutral-800 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-red-900/30">
       {/* Image */}
       <div className="relative w-full aspect-[4/5]">
         <Image
           src={flyer.image || "/placeholder.svg"}
-          alt={flyer.title}
+          alt={flyer.fileNameOriginal || flyer.title}
+          title={flyer.fileNameOriginal || flyer.title}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-110"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
@@ -31,6 +37,13 @@ export function FlyerCard({ flyer, onEdit, onDelete }: FlyerCardProps) {
             title="Edit Flyer"
           >
             <Edit className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => forceDownload(flyer.image, flyer.fileNameOriginal || `${flyer.title.replace(/\s+/g, '_')}.jpg`)}
+            className="p-2 bg-black text-white rounded-full hover:bg-green-600 transition-colors duration-200"
+            title="Download Original"
+          >
+            <Download className="h-4 w-4" />
           </button>
           <button
             onClick={() => onDelete(flyer)}
@@ -47,6 +60,11 @@ export function FlyerCard({ flyer, onEdit, onDelete }: FlyerCardProps) {
         <p className="font-semibold text-white text-sm truncate">
           {flyer.title}
         </p>
+        {flyer.fileNameOriginal && (
+          <p className="text-[10px] text-gray-400 truncate mt-0.5 font-mono">
+            {flyer.fileNameOriginal}
+          </p>
+        )}
         <div className="flex justify-center items-center gap-3 mt-2 text-xs text-gray-300">
           <span className="px-3 py-1 rounded-full bg-red-600/80 text-white font-medium shadow">
             {/* $ */}

@@ -43,7 +43,8 @@ export interface Flyer {
   price: 10 | 15 | 40
   formType: "With Photo" | "Only Info" | "Birthday"
   image: string
-  recentlyAdded: boolean 
+  recentlyAdded: boolean
+  fileNameOriginal?: string
 }
 
 // Generate demo flyers - 4 per category
@@ -75,8 +76,8 @@ export function generateDemoFlyers(): Flyer[] {
     "/pic39.jpg",
     "/pic40.jpg",
     "/pic41.jpg",
- 
-   
+
+
 
   ]
 

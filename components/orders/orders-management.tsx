@@ -234,9 +234,19 @@ export const OrdersManagement = observer(({ userRole }: OrdersManagementProps) =
                               </div>
                             );
                           })()}
-                          <span className="text-foreground text-sm font-medium">
-                            {order.event_title || `Order #${order.displayId}`}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="text-foreground text-sm font-medium">
+                              {order.event_title || `Order #${order.displayId}`}
+                            </span>
+                            {(() => {
+                              const flyer = flyerStore.flyers.find(f => f.id === order.flyer_is.toString());
+                              return flyer && flyer.fileNameOriginal ? (
+                                <span className="text-[10px] text-muted-foreground font-mono mt-0.5 opacity-80">
+                                  Flyer: {flyer.fileNameOriginal}
+                                </span>
+                              ) : null;
+                            })()}
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 px-4">

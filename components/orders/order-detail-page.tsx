@@ -235,23 +235,9 @@ export const OrderDetailPage = observer(({
       minute: "2-digit",
     });
 
-  const forceDownload = async (url: string, filename: string) => {
-    try {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const blobUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-    } catch (error) {
-      console.error('Download failed:', error);
-      // Fallback
-      window.open(url, '_blank');
-    }
+  const forceDownload = (url: string, filename: string) => {
+    const downloadUrl = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+    window.location.href = downloadUrl;
   };
   console.log("Order Details Debug:", selectedOrder);
   // alert(JSON.stringify(selectedOrder));
@@ -645,7 +631,8 @@ export const OrderDetailPage = observer(({
                     <div className="aspect-[3/4] w-full relative bg-black/5">
                       <img
                         src={orderedFlyer.image}
-                        alt={orderedFlyer.title}
+                        alt={orderedFlyer.fileNameOriginal || orderedFlyer.title}
+                        title={orderedFlyer.fileNameOriginal || orderedFlyer.title}
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = "/placeholder.svg";
@@ -660,7 +647,7 @@ export const OrderDetailPage = observer(({
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-eye"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /><circle cx="12" cy="12" r="3" /></svg>
                         </button>
                         <button
-                          onClick={() => forceDownload(orderedFlyer.image, `${orderedFlyer.title.replace(/\s+/g, '_')}.jpg`)}
+                          onClick={() => forceDownload(orderedFlyer.image, orderedFlyer.fileNameOriginal || `${orderedFlyer.title.replace(/\s+/g, '_')}.jpg`)}
                           className="p-2 bg-white text-black rounded-full hover:bg-white/90 transition-colors"
                           title="Download Template"
                         >
@@ -670,6 +657,11 @@ export const OrderDetailPage = observer(({
                     </div>
                     <div className="p-3">
                       <p className="font-semibold text-sm truncate" title={orderedFlyer.title}>{orderedFlyer.title}</p>
+                      {orderedFlyer.fileNameOriginal && (
+                        <p className="text-[11px] text-muted-foreground truncate font-mono mt-0.5">
+                          {orderedFlyer.fileNameOriginal}
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">ID: {orderedFlyer.id}</p>
                     </div>
                   </div>
@@ -767,14 +759,13 @@ export const OrderDetailPage = observer(({
                         {new Date(file.created_at).toLocaleString()}
                       </span>
                     </div>
-                    <a
-                      href={file.file_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-primary hover:underline text-sm font-semibold"
+                    <button
+                      onClick={() => forceDownload(file.file_url, file.original_name)}
+                      className="flex items-center gap-2 text-primary hover:underline text-sm font-semibold h-fit"
                     >
-                      <Download className="w-4 h-4" /> Download
-                    </a>
+                      <Download className="w-4 h-4" />
+                      Download
+                    </button>
                   </div>
                 ))}
               </div>

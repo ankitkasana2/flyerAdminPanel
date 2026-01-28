@@ -251,6 +251,9 @@ export const EditFlyerModal = observer(({
   const [recentlyAdded, setRecentlyAdded] = useState<boolean>(
     flyer.recentlyAdded
   );
+  const [fileNameOriginal, setFileNameOriginal] = useState<string>(
+    flyer.fileNameOriginal || ""
+  );
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -271,6 +274,7 @@ export const EditFlyerModal = observer(({
         : (flyer.category ? [flyer.category] : [])
     );
     setRecentlyAdded(flyer.recentlyAdded);
+    setFileNameOriginal(flyer.fileNameOriginal || "");
     setError(null);
   }, [flyer, isOpen]);
 
@@ -285,6 +289,7 @@ export const EditFlyerModal = observer(({
         : (flyer.category ? [flyer.category] : [])
     );
     setRecentlyAdded(flyer.recentlyAdded);
+    setFileNameOriginal(flyer.fileNameOriginal || "");
     setError(null);
   };
 
@@ -316,6 +321,7 @@ export const EditFlyerModal = observer(({
       category: selectedCategories[0] || "Uncategorized", // Fallback for single field
       categories: selectedCategories, // Main logic now
       recentlyAdded,
+      fileNameOriginal: fileNameOriginal.trim(),
     };
 
     setSaving(true);
@@ -368,6 +374,19 @@ export const EditFlyerModal = observer(({
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter flyer title"
               className="bg-background/50 border-border/60 text-foreground placeholder:text-muted-foreground/50"
+            />
+          </div>
+
+          {/* Original File Name */}
+          <div>
+            <label className="text-sm font-bold text-foreground block mb-2">
+              Original File Name (GRODIFYXXXX)
+            </label>
+            <Input
+              value={fileNameOriginal}
+              onChange={(e) => setFileNameOriginal(e.target.value)}
+              placeholder="e.g. GRODIFY1764"
+              className="bg-background/50 border-border/60 text-foreground placeholder:text-muted-foreground/50 font-mono"
             />
           </div>
 

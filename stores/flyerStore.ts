@@ -29,6 +29,7 @@ class FlyerStore {
         formType: f.form_type,
         image: f.image_url || "/placeholder.svg",
         recentlyAdded: !!f.recently_added,
+        fileNameOriginal: f.file_name_original || "",
       }));
 
       runInAction(() => {
@@ -66,6 +67,7 @@ class FlyerStore {
         categories: updatedFlyer.categories,
         recently_added: updatedFlyer.recentlyAdded, // Convert camelCase to snake_case
         image_url: updatedFlyer.image,
+        file_name_original: updatedFlyer.fileNameOriginal,
       };
 
       const res = await fetch(

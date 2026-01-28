@@ -170,7 +170,7 @@ export function BulkUpload({ onClose, onUpload }) {
       const newFlyers = []
       let successCount = 0
       let errorCount = 0
-console.log("[v0] Parsed ankit kasana CSV rows:", rows);
+      console.log("[v0] Parsed ankit kasana CSV rows:", rows);
       for (let i = 0; i < Math.min(rows.length, 30 - flyers.length); i++) {
         const row = rows[i]
 
@@ -183,9 +183,9 @@ console.log("[v0] Parsed ankit kasana CSV rows:", rows);
 
         const flyer_categories = row.category
           ? row.category
-              .split(",")
-              .map((c) => c.trim())
-              .filter((c) => c && c.length > 0)
+            .split(",")
+            .map((c) => c.trim())
+            .filter((c) => c && c.length > 0)
           : []
 
         // Parse recently_added (Yes/No)
@@ -206,7 +206,7 @@ console.log("[v0] Parsed ankit kasana CSV rows:", rows);
             console.log("[v0] Row", i + 2, "- image loaded successfully")
           }
         }
-        console.log("this is image url",row.image_url);
+        console.log("this is image url", row.image_url);
 
         const createFlyerObject = (preview) => ({
           id: `${Date.now()}-${i}-${Math.random()}`,
@@ -290,7 +290,7 @@ console.log("[v0] Parsed ankit kasana CSV rows:", rows);
             file,
             preview: e.target?.result,
             title: file.name.replace(/\.[^/.]+$/, ""),
-            fileNameOriginal: "",
+            fileNameOriginal: file.name,
             price: "$10",
             formType: "Only Info",
             categories: [],
@@ -363,57 +363,57 @@ console.log("[v0] Parsed ankit kasana CSV rows:", rows);
   // }
 
   const handleSave = async () => {
-  if (flyers.length === 0) return;
+    if (flyers.length === 0) return;
 
-  setIsLoading(true);
-  setMessage(null);
+    setIsLoading(true);
+    setMessage(null);
 
-  try {
-    // Prepare payload
-    const payload = flyers.map((flyer) => ({
-      title: flyer.title,
-      price: flyer.price,
-      formType: flyer.formType,
-      recentlyAdded: flyer.recentlyAdded,
-      categories: flyer.categories,
-      image_url: flyer.preview || "", // URL or base64
-      fileNameOriginal: flyer.fileNameOriginal || "",
-    }));
-
-    const response = await fetch("http://193.203.161.174:3007/api/flyers", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ flyers: payload }),
-    });
-
-    // Read the raw text first
-    const text = await response.text();
-
-    let data;
     try {
-      data = JSON.parse(text); // parse only if valid JSON
-    } catch {
-      throw new Error(`Invalid JSON response from server: ${text}`);
+      // Prepare payload
+      const payload = flyers.map((flyer) => ({
+        title: flyer.title,
+        price: flyer.price,
+        formType: flyer.formType,
+        recentlyAdded: flyer.recentlyAdded,
+        categories: flyer.categories,
+        image_url: flyer.preview || "", // URL or base64
+        fileNameOriginal: flyer.fileNameOriginal || "",
+      }));
+
+      const response = await fetch("http://193.203.161.174:3007/api/flyers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ flyers: payload }),
+      });
+
+      // Read the raw text first
+      const text = await response.text();
+
+      let data;
+      try {
+        data = JSON.parse(text); // parse only if valid JSON
+      } catch {
+        throw new Error(`Invalid JSON response from server: ${text}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to upload flyers");
+      }
+
+      console.log("Upload result:", data);
+
+      setMessage({ type: "success", text: "All flyers have been uploaded successfully." });
+      setFlyers([]);
+      setUploadMode("image");
+    } catch (error) {
+      console.error("Upload error:", error);
+      setMessage({ type: "error", text: `Error uploading flyers: ${error.message}` });
+    } finally {
+      setIsLoading(false);
     }
-
-    if (!response.ok) {
-      throw new Error(data.message || "Failed to upload flyers");
-    }
-
-    console.log("Upload result:", data);
-
-    setMessage({ type: "success", text: "All flyers have been uploaded successfully." });
-    setFlyers([]);
-    setUploadMode("image");
-  } catch (error) {
-    console.error("Upload error:", error);
-    setMessage({ type: "error", text: `Error uploading flyers: ${error.message}` });
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 
 
@@ -479,11 +479,10 @@ dj_night_01,DJ Night,$10,With Photo,No,"DJ Image or Artist, Premium Flyers",http
 
         {message && (
           <div
-            className={`p-3 rounded-lg flex items-center gap-2 ${
-              message.type === "success"
+            className={`p-3 rounded-lg flex items-center gap-2 ${message.type === "success"
                 ? "bg-green-500/10 text-green-700 border border-green-200"
                 : "bg-red-500/10 text-red-700 border border-red-200"
-            }`}
+              }`}
           >
             {message.type === "success" ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
             <span className="text-sm">{message.text}</span>
@@ -496,9 +495,8 @@ dj_night_01,DJ Night,$10,With Photo,No,"DJ Image or Artist, Premium Flyers",http
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-              isDragging ? "border-[#E50914] bg-[#E50914]/5" : "border-border"
-            }`}
+            className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragging ? "border-[#E50914] bg-[#E50914]/5" : "border-border"
+              }`}
           >
             <Upload className="w-12 h-12 mx-auto mb-3 text-muted-foreground" />
             <p className="text-foreground font-semibold mb-1">
