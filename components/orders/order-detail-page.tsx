@@ -84,7 +84,7 @@ export const OrderDetailPage = observer(({
 
   const fetchOrderFiles = async () => {
     try {
-      const response = await fetch(`http://193.203.161.174:3007/api/order-files/order/${selectedOrder.id}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/order-files/order/${selectedOrder.id}`);
       if (response.ok) {
         const data: OrderFilesResponse = await response.json();
         if (data.success) {
@@ -167,7 +167,7 @@ export const OrderDetailPage = observer(({
       const formData = new FormData();
       formData.append("file", uploadedFile);
 
-      const response = await fetch(`http://193.203.161.174:3007/api/order-files/${selectedOrder.id}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/order-files/${selectedOrder.id}`, {
         method: 'POST',
         body: formData,
       });

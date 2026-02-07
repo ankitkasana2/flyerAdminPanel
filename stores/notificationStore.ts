@@ -1,7 +1,7 @@
 // stores/notificationStore.ts
 import { makeAutoObservable, runInAction } from "mobx"
 
-const API_BASE = "http://193.203.161.174:3007/api/notifications"
+const API_BASE = `${process.env.NEXT_PUBLIC_API_BASE_URL}/notifications`
 
 export interface Notification {
   id: number
@@ -36,7 +36,7 @@ class NotificationStore {
       }
 
       const data = await response.json()
-      
+
       runInAction(() => {
         this.notifications = Array.isArray(data) ? data : data.notifications || []
         this.loading = false

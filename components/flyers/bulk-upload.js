@@ -380,7 +380,7 @@ export function BulkUpload({ onClose, onUpload }) {
         fileNameOriginal: flyer.fileNameOriginal || "",
       }));
 
-      const response = await fetch("http://193.203.161.174:3007/api/flyers", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/flyers`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -480,8 +480,8 @@ dj_night_01,DJ Night,$10,With Photo,No,"DJ Image or Artist, Premium Flyers",http
         {message && (
           <div
             className={`p-3 rounded-lg flex items-center gap-2 ${message.type === "success"
-                ? "bg-green-500/10 text-green-700 border border-green-200"
-                : "bg-red-500/10 text-red-700 border border-red-200"
+              ? "bg-green-500/10 text-green-700 border border-green-200"
+              : "bg-red-500/10 text-red-700 border border-red-200"
               }`}
           >
             {message.type === "success" ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}

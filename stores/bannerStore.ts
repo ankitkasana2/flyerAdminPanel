@@ -1,8 +1,9 @@
 // stores/bannerStore.ts  ← Real DELETE + Status Toggle dono hain
 import { makeAutoObservable, runInAction } from "mobx";
 
-const API_BASE = "http://193.203.161.174:3007/api/banners";
-const UPLOADS_BASE = "http://193.203.161.174:3007/uploads/banners";
+const API_BASE = `${process.env.NEXT_PUBLIC_API_BASE_URL}/banners`;
+const BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://grodify.com/api").replace("/api", "");
+const UPLOADS_BASE = `${BASE_URL}/uploads/banners`;
 
 export interface IBanner {
   id: number;

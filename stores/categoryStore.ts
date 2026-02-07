@@ -21,7 +21,7 @@ class CategoryStore {
         this.error = null;
 
         try {
-            const res = await fetch("http://193.203.161.174:3007/api/categories");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/categories`);
             const data = await res.json();
 
             if (data.success && Array.isArray(data.categories)) {
@@ -47,7 +47,7 @@ class CategoryStore {
         this.error = null;
 
         try {
-            const res = await fetch("http://193.203.161.174:3007/api/categories", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/categories`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ name, rank }),
@@ -77,7 +77,7 @@ class CategoryStore {
         this.error = null;
 
         try {
-            const res = await fetch(`http://193.203.161.174:3007/api/categories/${id}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/categories/${id}`, {
                 method: "DELETE",
             });
             const data = await res.json();
@@ -111,7 +111,7 @@ class CategoryStore {
         // The UI drag-and-drop will probably trigger this.
 
         try {
-            const res = await fetch(`http://193.203.161.174:3007/api/categories/${id}/rank`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/categories/${id}/rank`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ rank: newRank }),

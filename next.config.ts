@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         hostname: "193.203.161.174",
         pathname: "/uploads/**",
       },
+      {
+        protocol: "https",
+        hostname: "grodify.com",
+        pathname: "/uploads/**",
+      },
 
       // 2. Your S3 bucket
       {

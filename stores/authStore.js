@@ -23,7 +23,7 @@ class AuthStore {
   async initializeAuth() {
     const savedUser = localStorage.getItem("user");
     const savedToken = localStorage.getItem("token");
-    
+
     if (savedUser && savedToken) {
       try {
         // Validate token format and expiry
@@ -80,7 +80,7 @@ class AuthStore {
     this.error = "";
 
     try {
-      const res = await fetch("http://193.203.161.174:3007/api/auth/login", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role }),

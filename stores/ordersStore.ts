@@ -86,7 +86,7 @@ class OrdersStore {
       this.loading = true
       this.error = null
 
-      const response = await fetch('http://193.203.161.174:3007/api/orders')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/orders`)
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       const data = await response.json()
@@ -118,7 +118,7 @@ class OrdersStore {
     order.status = newStatus
 
     try {
-      const response = await fetch(`http://193.203.161.174:3007/api/orders/${orderId}/status`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus.toLowerCase() })
@@ -284,7 +284,7 @@ ordersStore.fetchOrders()
 setInterval(() => ordersStore.fetchOrders(), 30000)
 
 // Helper functions for image URL normalization
-const BASE_IMG_URL = "http://193.203.161.174:3007";
+const BASE_IMG_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "https://grodify.com/api").replace("/api", "");
 
 function normalizeImageUrl(url: any): string | null {
   if (!url || typeof url !== 'string') return null;

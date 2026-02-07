@@ -16,7 +16,7 @@ class FlyerStore {
     this.error = null;
 
     try {
-      const res = await fetch("http://193.203.161.174:3007/api/flyers");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/flyers`);
       if (!res.ok) throw new Error("Failed to fetch flyers");
       const data = await res.json();
 
@@ -71,7 +71,7 @@ class FlyerStore {
       };
 
       const res = await fetch(
-        `http://193.203.161.174:3007/api/flyers/${updatedFlyer.id}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/flyers/${updatedFlyer.id}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -107,7 +107,7 @@ class FlyerStore {
     this.error = null;
 
     try {
-      const res = await fetch(`http://193.203.161.174:3007/api/flyers/${flyerId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/flyers/${flyerId}`, {
         method: "DELETE"
       });
 

@@ -153,7 +153,7 @@ export const NotificationTestPanel = observer(() => {
                 {/* API Info */}
                 <div className="p-3 bg-muted rounded-md">
                     <p className="text-xs font-mono">
-                        API: http://193.203.161.174:3007/api/notifications
+                        API: {process.env.NEXT_PUBLIC_API_BASE_URL}/notifications
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
                         Auto-refresh: Every 30 seconds
