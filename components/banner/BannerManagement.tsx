@@ -131,6 +131,7 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
   };
 
   const handleSaveBanner = async () => {
+    console.log("Saving banner button clicked. FormData state:", formData);
     if (!formData.title.trim() || !formData.description.trim()) {
       alert("Please fill title and description!");
       return;
@@ -147,7 +148,7 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
     if (formData.imageFile) {
       formDataToSend.append("image", formData.imageFile);
     }
-    
+
     // New fields
     formDataToSend.append("button_text", formData.buttonText);
     formDataToSend.append("button_enabled", formData.buttonEnabled ? "1" : "0");
@@ -169,15 +170,15 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
   };
 
   const handleDeleteBanner = async (id: number) => {
-  if (!confirm("Are you Sure? banner delete parmanantly")) return;
+    if (!confirm("Are you Sure? banner delete parmanantly")) return;
 
-  try {
-    await bannerStore.deleteBanner(id);
-    // Success toast ya message (optional)
-  } catch (err) {
-    alert("Not deleted " + bannerStore.error);
-  }
-};
+    try {
+      await bannerStore.deleteBanner(id);
+      // Success toast ya message (optional)
+    } catch (err) {
+      alert("Not deleted " + bannerStore.error);
+    }
+  };
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -217,9 +218,8 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
                   onDragStart={() => handleDragStart(banner.id)}
                   onDragOver={handleDragOver}
                   onDrop={() => handleDrop(banner.id)}
-                  className={`p-4 bg-secondary rounded-lg border border-border flex items-center justify-between gap-4 ${
-                    canEdit ? "cursor-move hover:bg-secondary/80" : ""
-                  } transition-colors`}
+                  className={`p-4 bg-secondary rounded-lg border border-border flex items-center justify-between gap-4 ${canEdit ? "cursor-move hover:bg-secondary/80" : ""
+                    } transition-colors`}
                 >
                   <div className="flex items-center gap-4 flex-1 min-w-0">
                     {canEdit && <GripVertical className="w-5 h-5 text-muted-foreground flex-shrink-0" />}
@@ -275,7 +275,7 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
                           <Trash2 className="w-5 h-5 text-muted-foreground hover:text-destructive" />
                         </button>
                       </>
-                    )}  
+                    )}
                   </div>
                 </div>
               ))}
@@ -347,7 +347,7 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
               {/* Button Configuration Section */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-foreground">Button Configuration</h3>
-                
+
                 <div className="flex items-center gap-3">
                   <input
                     type="checkbox"
@@ -397,8 +397,8 @@ export const BannerManagement = observer(({ userRole }: BannerManagementProps) =
                           type="text"
                           placeholder={
                             formData.linkType === "category" ? "e.g., Ladies Night, Summer, Party" :
-                            formData.linkType === "flyer" ? "e.g., Summer Sale, Happy Hour" :
-                            "e.g., https://example.com"
+                              formData.linkType === "flyer" ? "e.g., Summer Sale, Happy Hour" :
+                                "e.g., https://example.com"
                           }
                           value={formData.linkValue}
                           onChange={(e) => setFormData({ ...formData, linkValue: e.target.value })}

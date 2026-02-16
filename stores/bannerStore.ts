@@ -53,6 +53,7 @@ class BannerStore {
   }
 
   async createBanner(formData: FormData) {
+    console.log("bannerStore.createBanner called with FormData");
     this.loading = true;
     try {
       const res = await fetch(`${API_BASE}/create`, {
